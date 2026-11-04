@@ -33,4 +33,4 @@ jobs:
       - name: Upload build
         run: |
           rsync -az --delete dist/ \
-            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/luyen-phong-van/"
+            "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/workspace/surveylhd_be_deploy/public_html/luyen-phong-van/"
