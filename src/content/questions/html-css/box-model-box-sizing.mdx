@@ -1,0 +1,25 @@
+---
+title: "Box model và `box-sizing` khác nhau thế nào giữa content-box và border-box?"
+topic: html-css
+roles: [frontend, fullstack]
+level: junior
+tags: [box-model, box-sizing, layout]
+answer: "Box model gồm content, padding, border, margin. Với content-box (mặc định) width chỉ là phần content, padding và border cộng thêm vào. Với border-box, width đã bao gồm padding và border nên kích thước dễ dự đoán hơn."
+---
+```css
+.a { width: 200px; padding: 20px; border: 5px solid; }
+/* content-box: tổng rộng = 200 + 40 + 10 = 250px */
+
+.b { box-sizing: border-box; width: 200px; padding: 20px; border: 5px solid; }
+/* border-box: tổng rộng = 200px, content còn 150px */
+
+*, *::before, *::after { box-sizing: border-box; }
+```
+
+<Callout type="tip">
+Hầu hết dự án đặt `border-box` toàn cục. Margin luôn nằm ngoài, không được tính vào `width` ở cả hai chế độ.
+</Callout>
+
+<Callout type="followup">
+Margin collapsing là gì? Margin dọc của hai block liền kề (hoặc cha-con không có padding/border) gộp lại thành giá trị lớn hơn, không cộng dồn. Flex và grid item không bị collapse.
+</Callout>

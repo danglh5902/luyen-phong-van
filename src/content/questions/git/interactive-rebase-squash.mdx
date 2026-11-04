@@ -1,0 +1,34 @@
+---
+title: "Interactive rebase để squash và dọn lịch sử commit"
+topic: git
+roles: [backend, fullstack, devops, frontend]
+level: mid
+tags: [rebase, squash, fixup, history]
+answer: "git rebase -i <base> mở danh sách commit để pick, reword, squash, fixup, drop hoặc đổi thứ tự, viết lại lịch sử thành các commit gọn. Chỉ nên dùng trên nhánh chưa chia sẻ vì commit sinh ra có hash mới."
+---
+```bash
+git rebase -i HEAD~4
+```
+
+```text
+pick   a1b2c3 feat: add cart
+squash d4e5f6 fix typo          # gộp vào commit trên, giữ message
+fixup  789abc wip               # gộp vào commit trên, bỏ message
+reword 0fedcb add tests         # đổi message
+```
+
+```bash
+git commit --fixup a1b2c3                  # tạo commit fixup gắn với a1b2c3
+git rebase -i --autosquash origin/main     # tự sắp xếp fixup
+git rebase --abort                         # huỷ nếu rối
+```
+
+| Lệnh | Tác dụng |
+|---|---|
+| squash | gộp, cho sửa message gộp |
+| fixup | gộp, bỏ message |
+| drop | xoá commit |
+
+<Callout type="pitfall">
+Sau khi rebase nhánh đã push, cần force push (nên dùng `--force-with-lease`). Không rebase nhánh dùng chung như `main`.
+</Callout>

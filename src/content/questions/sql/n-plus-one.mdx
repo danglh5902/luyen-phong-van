@@ -1,0 +1,16 @@
+---
+title: "Vấn đề N+1 query là gì? Cách khắc phục?"
+topic: sql
+roles: [backend, fullstack]
+level: mid
+tags: [orm, performance]
+answer: "N+1 là chạy 1 query lấy danh sách rồi N query nữa cho từng phần tử. Khắc phục bằng JOIN, eager loading, hoặc gom id và query một lần bằng WHERE IN."
+---
+```js
+// ❌ N+1: 1 + N query
+const users = await db.user.findMany();
+for (const u of users) u.orders = await db.order.findMany({ where: { userId: u.id } });
+
+// ✅ 2 query (hoặc 1 với JOIN)
+const users2 = await db.user.findMany({ include: { orders: true } });
+```

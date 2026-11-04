@@ -1,0 +1,25 @@
+---
+title: "Generics là gì? Khi nào dùng?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [generics, types]
+answer: "Generics là tham số hóa kiểu: viết một hàm/kiểu dùng được cho nhiều kiểu mà vẫn giữ type-safety, thay vì dùng any."
+---
+import Runnable from "../../../components/Runnable";
+
+<Runnable client:visible lang="ts" code={`function first<T>(arr: T[]): T | undefined {
+  return arr[0];
+}
+const n = first([1, 2, 3]);      // T = number
+const s = first(['a', 'b']);     // T = string
+
+// Ràng buộc: T phải có length
+function longest<T extends { length: number }>(a: T, b: T): T {
+  return a.length >= b.length ? a : b;
+}
+console.log(n, s, longest('abc', 'de'));`} />
+
+<Callout type="followup">
+`keyof T`, `T[K]`, `Partial<T>`, `Pick<T, K>` là các utility type xây trên generics, nên ôn thêm.
+</Callout>

@@ -1,0 +1,25 @@
+---
+title: "Horizontal scaling và vertical scaling khác nhau thế nào?"
+topic: system-design
+roles: [backend, fullstack, devops]
+level: junior
+tags: [scaling, scalability, stateless]
+answer: "Vertical scaling (scale up) nâng cấu hình một máy: đơn giản nhưng có trần và là single point of failure. Horizontal scaling (scale out) thêm nhiều máy sau load balancer: gần như không giới hạn và chịu lỗi tốt, nhưng cần service stateless và xử lý dữ liệu phân tán."
+---
+| | Vertical | Horizontal |
+|---|---|---|
+| Cách làm | thêm CPU/RAM cho máy | thêm số lượng máy |
+| Độ phức tạp | thấp | cao hơn |
+| Giới hạn | trần phần cứng, giá tăng phi tuyến | gần như không có |
+| Chịu lỗi | một máy chết là mất dịch vụ | còn các node khác |
+| Downtime khi nâng | thường có | không |
+
+Để scale out được, tầng ứng dụng nên **stateless**: session lưu ở Redis hoặc dùng JWT, file upload để ở object storage, không giữ trạng thái trên local disk.
+
+```text
+Client -> Load Balancer -> [App 1] [App 2] [App 3] -> Database (khó scale nhất)
+```
+
+<Callout type="tip">
+Thực tế thường scale up trước (rẻ, nhanh) rồi scale out khi chạm trần. Database là phần khó scale ngang nhất: dùng read replica, cache, rồi mới đến sharding.
+</Callout>

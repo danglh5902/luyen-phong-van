@@ -1,0 +1,24 @@
+---
+title: "Middleware trong Express là gì?"
+topic: nodejs
+roles: [backend, fullstack]
+level: junior
+tags: [express, middleware]
+answer: "Middleware là hàm (req, res, next) chạy tuần tự trước handler cuối: dùng cho log, auth, parse body, xử lý lỗi. Gọi next() để chuyển tiếp, hoặc kết thúc response."
+---
+```js
+app.use(express.json());                    // parse body
+
+const auth = (req, res, next) => {
+  if (!req.headers.authorization) return res.status(401).end();
+  next();                                   // cho đi tiếp
+};
+app.get('/me', auth, (req, res) => res.json({ ok: true }));
+
+// Error middleware: đủ 4 tham số, đặt cuối cùng
+app.use((err, req, res, next) => res.status(500).json({ message: err.message }));
+```
+
+<Callout type="pitfall">
+Quên gọi `next()` hoặc gửi response thì request bị treo. Thứ tự `app.use` rất quan trọng.
+</Callout>

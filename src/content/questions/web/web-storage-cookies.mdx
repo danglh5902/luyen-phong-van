@@ -1,0 +1,27 @@
+---
+title: "Cookie, localStorage và sessionStorage khác nhau thế nào?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: junior
+tags: [cookie, localstorage, sessionstorage, storage]
+answer: "Cookie tự gửi kèm mỗi request cùng origin/domain, có hạn dùng và cờ bảo mật (HttpOnly, Secure, SameSite), dung lượng khoảng 4KB. localStorage lưu vĩnh viễn, sessionStorage lưu theo tab; cả hai chỉ truy cập qua JS, khoảng 5MB, không tự gửi lên server."
+---
+| | Cookie | localStorage | sessionStorage |
+|---|---|---|---|
+| Dung lượng | ~4KB | ~5MB | ~5MB |
+| Hết hạn | Theo `Expires`/`Max-Age` | Không | Khi đóng tab |
+| Gửi lên server | Tự động | Không | Không |
+| JS đọc được | Có (trừ `HttpOnly`) | Có | Có |
+| Phạm vi | Theo domain/path | Theo origin | Theo origin và tab |
+
+```http
+Set-Cookie: sid=abc123; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600
+```
+
+- `HttpOnly`: JS không đọc được, giảm rủi ro bị đánh cắp bởi XSS.
+- `Secure`: chỉ gửi qua HTTPS.
+- `SameSite`: `Strict`/`Lax`/`None` kiểm soát việc gửi cookie trong request cross-site, giúp chống CSRF.
+
+<Callout type="pitfall">
+Không lưu dữ liệu nhạy cảm trong localStorage: mọi script chạy trên trang (kể cả bị XSS) đều đọc được. Cookie còn làm tăng kích thước mọi request nên chỉ lưu thứ cần thiết.
+</Callout>

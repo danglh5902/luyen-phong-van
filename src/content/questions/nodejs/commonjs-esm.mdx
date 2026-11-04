@@ -1,0 +1,18 @@
+---
+title: "CommonJS và ES Modules khác nhau thế nào?"
+topic: nodejs
+roles: [backend, fullstack]
+level: junior
+tags: [module]
+answer: "CommonJS (require/module.exports) load đồng bộ, động; ESM (import/export) là chuẩn của ngôn ngữ, phân tích tĩnh nên hỗ trợ tree-shaking và top-level await."
+---
+```js
+// CommonJS
+const fs = require('fs');
+module.exports = { run };
+
+// ESM (package.json: "type": "module" hoặc đuôi .mjs)
+import fs from 'node:fs';
+export const run = () => {};
+const m = await import('./lazy.js'); // import động
+```

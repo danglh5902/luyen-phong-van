@@ -1,0 +1,39 @@
+---
+title: "Mapped types là gì? Modifier `+/-` và key remapping `as`"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [mapped-types, keyof, utility-types]
+answer: "Mapped type tạo type mới bằng cách lặp qua các key: `{ [K in keyof T]: ... }`. Có thể thêm/bỏ modifier bằng `+`/`-` với `readonly` và `?`, và lọc hoặc đổi tên key với mệnh đề `as`. Hầu hết utility types (Partial, Readonly, Pick, Record) là mapped type."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="ts" code={`type Nullable<T> = { [K in keyof T]: T[K] | null };
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
+type OnlyStrings<T> = {
+  [K in keyof T as T[K] extends string ? K : never]: T[K];
+};
+
+type Person = { readonly id: number; name: string; age: number };
+
+const a: Nullable<Person> = { id: null, name: "An", age: null };
+const b: Mutable<Person> = { id: 1, name: "B", age: 2 };
+b.id = 5;                                  // hợp lệ nhờ -readonly
+const c: OnlyStrings<Person> = { name: "C" }; // chỉ còn key kiểu string
+
+console.log(a, b, c);`} />
+
+- `keyof T` lấy union các key; `K in ...` lặp qua union đó; `T[K]` là kiểu value.
+- Modifier: `-?` biến optional thành bắt buộc (như `Required`), `-readonly` bỏ readonly, `+` là mặc định.
+- Key remapping (TS 4.1): mệnh đề `as` cho phép đổi tên (kết hợp template literal như `get${Capitalize<K>}`) hoặc lọc key bằng `never`.
+- Mapped type trên union/mảng/tuple dạng homomorphic (`keyof T` trực tiếp) giữ modifier và ánh xạ từng phần tử của tuple.
+
+<Callout type="pitfall">
+Mapped type chỉ nông, không đệ quy: để làm `DeepPartial` phải tự viết đệ quy với điều kiện (`T[K] extends object ? DeepPartial<T[K]> : T[K]`), chú ý với function và Date.
+</Callout>
+
+<Callout type="followup">
+Khác nhau giữa `Record<string, X>` và index signature `{ [key: string]: X }`? (Gần như tương đương; `Record` với union key literal sinh property cụ thể.)
+</Callout>

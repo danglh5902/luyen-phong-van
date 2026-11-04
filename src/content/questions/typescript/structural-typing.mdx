@@ -1,0 +1,39 @@
+---
+title: "Structural typing là gì? Làm sao mô phỏng nominal typing (branded types)?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [structural-typing, branded-types, excess-property]
+answer: "TypeScript dùng structural typing: hai type tương thích nếu cấu trúc khớp, bất kể tên. Vì vậy `UserId` và `OrderId` cùng là string vẫn đổi chỗ được. Excess property check chỉ áp dụng cho object literal trực tiếp. Muốn phân biệt thì dùng branded type (intersection với tag giả)."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="ts" code={`interface Point { x: number; y: number }
+function len(p: Point) { return Math.hypot(p.x, p.y); }
+
+const p3 = { x: 1, y: 2, z: 3 };
+console.log(len(p3).toFixed(2));   // hợp lệ: p3 có thừa z, vẫn khớp cấu trúc
+// len({ x: 1, y: 2, z: 3 });      // lỗi: excess property với literal trực tiếp
+
+type UserId = string & { readonly __brand: "UserId" };
+type OrderId = string & { readonly __brand: "OrderId" };
+const toUserId = (s: string) => s as UserId;   // chỗ duy nhất cần ép kiểu
+function getUser(id: UserId) { return "user:" + id; }
+
+const uid = toUserId("u1");
+console.log(getUser(uid));
+// getUser("u1" as OrderId);       // lỗi: OrderId không gán được cho UserId`} />
+
+- Type tương thích khi có đủ các property cần thiết với kiểu tương thích; thừa property thì vẫn được (trừ literal).
+- Class có `private`/`protected` member trở thành nominal: chỉ khớp với type có khai báo từ cùng class.
+- Brand chỉ tồn tại ở compile time (không có property `__brand` thật ở runtime), nên hãy tạo qua hàm validate/constructor.
+
+<Callout type="pitfall">
+Structural typing làm `Object.keys(obj)` trả `string[]` thay vì `(keyof T)[]`: object thật có thể có thêm key mà type không biết. Đừng ép kiểu bừa, hãy kiểm tra hoặc dùng `Object.entries` có chủ đích.
+</Callout>
+
+<Callout type="followup">
+Vì sao hai class rỗng khác tên vẫn gán cho nhau được? (Cấu trúc đều là `{}`.)
+</Callout>

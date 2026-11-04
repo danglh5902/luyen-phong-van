@@ -1,0 +1,34 @@
+---
+title: "CSS hiện đại: `:has()`, native nesting và `@layer` giải quyết vấn đề gì?"
+topic: html-css
+roles: [frontend, fullstack]
+level: senior
+tags: [has, nesting, cascade-layers, modern-css]
+answer: ":has() là relational selector cho phép chọn phần tử cha dựa trên con. Native nesting cho viết selector lồng nhau không cần Sass. @layer khai báo thứ tự ưu tiên giữa các nhóm style, layer khai báo sau thắng layer trước bất kể specificity."
+---
+```css
+/* :has - chọn card có ảnh, form có input lỗi */
+.card:has(img) { grid-template-columns: 120px 1fr; }
+form:has(:user-invalid) .submit { opacity: .5; }
+
+/* Nesting */
+.nav {
+  display: flex;
+  & a { color: inherit; }
+  &:hover { background: #eee; }
+  @media (min-width: 768px) { gap: 24px; }
+}
+
+/* Cascade layers: reset < base < components < utilities */
+@layer reset, base, components, utilities;
+@layer components { .btn { padding: 8px 12px; } }
+@layer utilities  { .p-0 { padding: 0; } }
+```
+
+- Style không thuộc layer nào có ưu tiên cao hơn mọi layer (trừ `!important` đảo ngược thứ tự layer).
+- `@layer` giúp nhúng CSS thư viện bên thứ ba ở layer thấp để dễ ghi đè mà không tăng specificity.
+- Hiệu năng `:has()`: trình duyệt hiện đại tối ưu tốt, nhưng nên tránh selector `:has()` quá rộng như `body:has(...)` lặp lại trong nhiều quy tắc.
+
+<Callout type="followup">
+`:is()` và `:where()` khác gì? Cả hai nhận danh sách selector; `:is()` mang specificity của đối số mạnh nhất, `:where()` luôn bằng 0 nên rất hợp cho style nền dễ ghi đè.
+</Callout>

@@ -1,0 +1,33 @@
+---
+title: "XSS và CSRF khác nhau thế nào? Cách phòng chống?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [xss, csrf, security, samesite]
+answer: "XSS: kẻ tấn công chèn script chạy trong trang của bạn (đánh cắp dữ liệu, thao tác thay người dùng); chống bằng escape/encode output, tránh innerHTML, CSP. CSRF: lợi dụng cookie tự gửi để khiến người dùng đã đăng nhập gửi request ngoài ý muốn; chống bằng SameSite cookie và CSRF token."
+---
+| | XSS | CSRF |
+|---|---|---|
+| Bản chất | Chạy mã độc trong origin của bạn | Mượn phiên đăng nhập từ site khác |
+| Kẻ tấn công đọc được response | Có | Không (chỉ gây tác động) |
+| Chống | Escape output, CSP, `HttpOnly`, sanitize | `SameSite`, CSRF token, kiểm tra `Origin` |
+
+```js
+// XSS: nguy hiểm
+el.innerHTML = userInput;
+// An toàn: coi là text
+el.textContent = userInput;
+```
+
+```http
+Set-Cookie: sid=...; HttpOnly; Secure; SameSite=Lax
+```
+
+- Loại XSS: stored, reflected, DOM-based.
+- Framework như React tự escape giá trị trong JSX; rủi ro nằm ở `dangerouslySetInnerHTML`, URL `javascript:`, thư viện bên thứ ba.
+- CSRF chỉ nguy hiểm với auth tự gửi (cookie); API dùng header `Authorization` thủ công ít bị CSRF nhưng dễ bị XSS đánh cắp token nếu lưu ở localStorage.
+- Nếu có XSS, CSRF token cũng vô hiệu vì script đọc được token.
+
+<Callout type="pitfall">
+`HttpOnly` không ngăn XSS, nó chỉ ngăn script đọc cookie. Kẻ tấn công vẫn có thể gửi request thay người dùng ngay trong trang.
+</Callout>

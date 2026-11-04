@@ -1,0 +1,29 @@
+---
+title: "Exception Filter trong NestJS là gì? Khi nào cần tự viết?"
+topic: nestjs
+roles: [backend, fullstack]
+level: junior
+tags: [exception-filter, error-handling]
+answer: "Exception filter bắt exception chưa được xử lý và định dạng response lỗi. Mặc định Nest tự trả JSON cho HttpException. Tự viết filter bằng @Catch() khi cần format lỗi thống nhất, map lỗi domain/DB sang HTTP status hoặc log tập trung."
+---
+```ts
+@Catch(HttpException)
+export class HttpErrorFilter implements ExceptionFilter {
+  catch(ex: HttpException, host: ArgumentsHost) {
+    const res = host.switchToHttp().getResponse<Response>();
+    res.status(ex.getStatus()).json({
+      statusCode: ex.getStatus(),
+      message: ex.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}
+// gắn: @UseFilters(HttpErrorFilter) hoặc app.useGlobalFilters(...)
+```
+
+- `@Catch()` không tham số sẽ bắt mọi loại lỗi.
+- Exception ném ngoài HTTP (vd. Error thường) mặc định thành 500.
+
+<Callout type="tip">
+Để filter global có inject dependency, đăng ký bằng provider `APP_FILTER` thay vì `useGlobalFilters`.
+</Callout>

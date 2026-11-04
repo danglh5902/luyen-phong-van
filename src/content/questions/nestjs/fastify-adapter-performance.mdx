@@ -1,0 +1,38 @@
+---
+title: "NestJS với Express vs Fastify adapter và các cách tối ưu hiệu năng"
+topic: nestjs
+roles: [backend, fullstack]
+level: senior
+tags: [fastify, express, performance, adapter]
+answer: "Nest tách khỏi HTTP framework bằng adapter: mặc định Express, có thể đổi sang Fastify (FastifyAdapter) để throughput cao hơn nhờ JSON serialization theo schema và overhead thấp. Nhưng middleware/plugin đặc thù Express không dùng trực tiếp. Hiệu năng còn phụ thuộc nhiều vào scope provider, DB và logging."
+---
+```ts
+const app = await NestFactory.create<NestFastifyApplication>(
+  AppModule,
+  new FastifyAdapter({ logger: false }),
+);
+await app.listen(3000, '0.0.0.0');   // trong container cần lắng nghe 0.0.0.0
+```
+
+| | Express | Fastify |
+|---|---|---|
+| Hiệu năng thô | Thấp hơn | Cao hơn đáng kể |
+| Hệ sinh thái | Rất rộng (middleware) | Plugin riêng (`@fastify/*`) |
+| Upload | multer (`FileInterceptor`) | `@fastify/multipart` |
+| Truy cập request | `req`, `res` kiểu Express | `FastifyRequest`, `FastifyReply` |
+
+Chi phí lớn hơn thường nằm ở chỗ khác:
+
+- **Scope REQUEST** làm tạo lại cả chuỗi provider phụ thuộc cho mỗi request; tránh nếu không cần (dùng `AsyncLocalStorage`/`nestjs-cls`).
+- Logging đồng bộ, ValidationPipe với DTO lớn, `ClassSerializerInterceptor` đều tốn CPU.
+- Truy vấn N+1 và thiếu index thường là bottleneck thật.
+- Nén/TLS/cache nên đặt ở reverse proxy; dùng cluster hoặc nhiều pod để tận dụng nhiều core.
+- Đo trước khi tối ưu: autocannon, clinic.js, `--cpu-prof`.
+
+<Callout type="pitfall">
+Đổi sang Fastify khi code đã dùng `@Req() req: Request` của Express hoặc middleware Express (helmet, cookie-parser phiên bản Express) sẽ hỏng; cần dùng bản `@fastify/helmet`, `@fastify/cookie`.
+</Callout>
+
+<Callout type="followup">
+Khi nào nên chuyển bottleneck CPU ra worker thread hoặc service riêng thay vì tối ưu adapter?
+</Callout>

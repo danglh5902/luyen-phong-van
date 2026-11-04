@@ -1,0 +1,24 @@
+---
+title: "Làm sao để Dockerfile build nhanh và image nhỏ?"
+topic: docker
+roles: [devops, backend, fullstack]
+level: mid
+tags: [dockerfile, multi-stage]
+answer: "Sắp xếp lệnh ít thay đổi lên trước để tận dụng layer cache, dùng multi-stage build để bỏ công cụ build khỏi image cuối, chọn base image nhỏ (alpine/slim) và thêm .dockerignore."
+---
+```dockerfile
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY package*.json ./          # đổi ít -> cache npm ci
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:22-alpine            # stage cuối: chỉ chứa thứ cần chạy
+WORKDIR /app
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/package*.json ./
+RUN npm ci --omit=dev
+USER node
+CMD ["node", "dist/main.js"]
+```

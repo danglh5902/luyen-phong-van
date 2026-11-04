@@ -1,0 +1,28 @@
+---
+title: "useLayoutEffect khác useEffect thế nào?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [hooks, useLayoutEffect, rendering]
+answer: "useLayoutEffect chạy đồng bộ sau khi DOM cập nhật nhưng trước khi trình duyệt paint, nên đo layout và chỉnh DOM không bị nhấp nháy. useEffect chạy sau paint, không chặn việc vẽ. Mặc định dùng useEffect."
+---
+Thứ tự: render, commit DOM, `useLayoutEffect`, browser paint, `useEffect`.
+
+```jsx
+function Tooltip({ children }) {
+  const ref = useRef(null);
+  const [h, setH] = useState(0);
+  useLayoutEffect(() => {
+    setH(ref.current.getBoundingClientRect().height);
+  }, [children]); // setState ở đây render lại trước khi paint
+  return <div ref={ref} style={{ top: -h }}>{children}</div>;
+}
+```
+
+- Dùng `useLayoutEffect`: đo kích thước/vị trí rồi cập nhật ngay, tránh flicker.
+- Dùng `useEffect`: fetch, subscribe, log, mọi side effect không cần chặn paint.
+- Effect đồng bộ chạy lâu sẽ làm trễ frame đầu tiên.
+
+<Callout type="pitfall">
+Trên server (SSR) `useLayoutEffect` không chạy và React 18 từng cảnh báo. Với code chạy cả hai môi trường, dùng `useEffect` hoặc tách phần đo đạc chỉ chạy ở client.
+</Callout>

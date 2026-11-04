@@ -1,0 +1,27 @@
+---
+title: "Database replication, sharding và consistent hashing"
+topic: system-design
+roles: [backend, devops]
+level: senior
+tags: [replication, sharding, consistent-hashing, database]
+answer: "Replication sao chép dữ liệu sang nhiều node để tăng đọc và chịu lỗi (có replication lag). Sharding chia dữ liệu theo shard key sang nhiều node để scale ghi và dung lượng. Consistent hashing đặt node và key lên một vòng hash, thêm hoặc bớt node chỉ di chuyển khoảng K/N key."
+---
+| | Replication | Sharding |
+|---|---|---|
+| Mục tiêu | đọc nhiều, HA | scale ghi và dung lượng |
+| Mỗi node chứa | toàn bộ dữ liệu | một phần dữ liệu |
+| Vấn đề | replication lag, failover | chọn shard key, truy vấn chéo shard, rebalance |
+
+```text
+hash(key) % N         -> thêm node: gần như mọi key đổi chỗ (rebalance cực lớn)
+vòng consistent hash  -> key đi theo chiều kim đồng hồ tới node gần nhất
+                         thêm node: chỉ key trong một cung di chuyển
+```
+
+- Consistent hashing thêm **virtual node** (mỗi node nhiều điểm trên vòng) để phân bố đều và cân theo công suất.
+- Shard key tốt: cardinality cao, phân bố đều, khớp pattern truy vấn. Tránh key tăng đơn điệu (timestamp) gây hot shard.
+- Cách chia: hash-based, range-based, directory-based (bảng tra cứu).
+
+<Callout type="pitfall">
+JOIN và transaction xuyên shard rất tốn kém; reshard khi đã chạy production là việc khó. Trước khi shard, hãy thử cache, read replica, tối ưu index, partition trong một node.
+</Callout>

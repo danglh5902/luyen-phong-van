@@ -1,0 +1,26 @@
+---
+title: "Request lifecycle trong NestJS: thứ tự middleware, guard, interceptor, pipe, filter?"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [lifecycle, middleware, guard, interceptor, pipe]
+answer: "Middleware, rồi Guards, Interceptors (phần trước handler), Pipes, handler, Interceptors (phần sau, theo thứ tự ngược), cuối cùng Exception filters nếu có lỗi. Ở mỗi tầng, thứ tự là global, controller, route."
+---
+```
+Request
+ -> Middleware (global, rồi module)
+ -> Guards (global -> controller -> route)
+ -> Interceptors, pre-handler (global -> controller -> route)
+ -> Pipes (global -> controller -> route -> param)
+ -> Controller handler
+ -> Interceptors, post-handler (route -> controller -> global)
+ -> Exception filters (route -> controller -> global) khi có throw
+Response
+```
+
+- Filter chạy theo chiều ngược (từ route ra global) và bắt lỗi từ guard, pipe, handler, interceptor.
+- Guard có `ExecutionContext` nên biết handler sắp chạy và đọc được metadata; middleware thì không.
+
+<Callout type="followup">
+Vì sao auth nên làm ở Guard thay vì middleware? Vì guard truy cập được metadata của route qua Reflector (vd. `@Roles`, `@Public`).
+</Callout>

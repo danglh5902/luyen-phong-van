@@ -1,0 +1,92 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Progress from '../components/Progress';
+import { getCollection } from 'astro:content';
+import { roles } from '../data/roles';
+import { topics } from '../data/topics';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const all = await getCollection('questions');
+const count = (t: string) => all.filter((q) => q.data.topic === t).length;
+const groups = [...new Set(topics.map((t) => t.group))];
+const featured = ['react', 'nextjs', 'nodejs', 'nestjs'];
+---
+<BaseLayout>
+  <!-- HERO -->
+  <section class="relative -mx-4 mb-16 overflow-hidden rounded-3xl px-4 py-14 sm:px-10 sm:py-20">
+    <div class="hero-bg absolute inset-0 -z-10"></div>
+    <div class="grid-bg absolute inset-0 -z-10"></div>
+    <div class="grid items-center gap-10 lg:grid-cols-[1.2fr_1fr]">
+      <div>
+        <span class="chip mb-5">✨ {all.length} câu hỏi · {topics.length} chủ đề · ví dụ chạy được ngay</span>
+        <h1 class="text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 dark:text-white sm:text-6xl">
+          Ôn phỏng vấn IT <span class="gradient-text">gọn, sâu, dễ nhớ</span>
+        </h1>
+        <p class="mt-5 max-w-xl text-lg text-slate-600 dark:text-slate-400">
+          Mỗi câu hỏi có đáp án ngắn để học thuộc, ví dụ code minh họa và lỗi hay gặp. Tập trung vào React, Next.js, Node.js và NestJS.
+        </p>
+        <div class="mt-7 flex flex-wrap gap-3">
+          <a href={`${base}/paths/`} class="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:-translate-y-0.5">Chọn lộ trình theo level →</a>
+          <a href="#topics" class="rounded-xl border border-slate-300 bg-white px-6 py-3 font-semibold hover:bg-slate-50 dark:border-white/15 dark:bg-white/5 dark:hover:bg-white/10">Xem chủ đề</a>
+        </div>
+        <div class="mt-8 max-w-sm"><Progress client:load ids={all.map((q) => q.id)} label="Tiến độ của bạn" /></div>
+      </div>
+
+      <!-- mock code card -->
+      <div class="card hidden rotate-1 overflow-hidden shadow-2xl lg:block">
+        <div class="flex items-center gap-1.5 border-b border-slate-200 px-4 py-2.5 dark:border-white/10">
+          <i class="h-3 w-3 rounded-full bg-rose-400"></i><i class="h-3 w-3 rounded-full bg-amber-400"></i><i class="h-3 w-3 rounded-full bg-emerald-400"></i>
+          <span class="ml-3 font-mono text-xs text-slate-500">closure.js</span>
+        </div>
+        <pre class="m-0 overflow-hidden p-5 font-mono text-[13px] leading-7 text-slate-700 dark:text-slate-300"><span class="text-violet-500">function</span> <span class="text-sky-500">makeCounter</span>() &#123;
+  <span class="text-violet-500">let</span> count = <span class="text-amber-500">0</span>;
+  <span class="text-violet-500">return</span> () =&gt; ++count;
+&#125;
+<span class="text-violet-500">const</span> a = <span class="text-sky-500">makeCounter</span>();
+console.<span class="text-sky-500">log</span>(a(), a()); <span class="text-slate-400">// 1 2</span></pre>
+        <div class="border-t border-slate-200 bg-slate-950 px-5 py-3 font-mono text-xs text-emerald-300 dark:border-white/10">▶ 1 2</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROLES -->
+  <section id="roles" class="mb-16 scroll-mt-24">
+    <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Chọn vị trí ứng tuyển</h2>
+    <p class="mb-6 mt-1 text-slate-500">Mỗi vị trí có lộ trình riêng cho Junior, Mid và Senior: cần ôn chủ đề nào, ở độ khó nào.</p>
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {roles.map((r) => (
+        <a href={`${base}/roles/${r.id}/`} style={`--accent:${r.color}`} class="card group p-6">
+          <div class="tile mb-4 h-12 w-12 text-2xl">{r.icon}</div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">{r.name}</h3>
+          <p class="mt-1 text-sm text-slate-500">{r.desc}</p>
+          <p class="mt-4 text-sm font-semibold text-[var(--accent)]">3 cấp độ <span class="inline-block transition group-hover:translate-x-1">→</span></p>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <!-- TOPICS -->
+  <section id="topics" class="scroll-mt-24">
+    <h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Hoặc chọn theo công nghệ</h2>
+    <p class="mb-6 mt-1 text-slate-500">Các chủ đề được gắn sao là trọng tâm hiện tại.</p>
+    {groups.map((g) => (
+      <div class="mb-8">
+        <h3 class="mb-3 text-xs font-bold uppercase tracking-widest text-slate-400">{g}</h3>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {topics.filter((t) => t.group === g).map((t) => (
+            <a href={`${base}/topics/${t.id}/`} style={`--accent:${t.color}`} class="card group flex items-start gap-4 p-5">
+              <span class="tile h-12 w-12 text-sm">{t.icon}</span>
+              <span class="min-w-0 flex-1">
+                <span class="flex items-center gap-2 font-bold text-slate-900 dark:text-white">
+                  {t.name}{featured.includes(t.id) && <span class="text-amber-500" title="Trọng tâm">★</span>}
+                  <span class="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-white/10">{count(t.id)} câu</span>
+                </span>
+                <span class="mt-1 block text-sm text-slate-500">{t.desc}</span>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    ))}
+  </section>
+</BaseLayout>

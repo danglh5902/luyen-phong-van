@@ -1,0 +1,30 @@
+---
+title: "Window function: ROW_NUMBER, RANK, LAG dùng thế nào?"
+topic: sql
+roles: [backend, fullstack]
+level: mid
+tags: [window-function, row-number, rank, lag]
+answer: "Window function tính toán trên một cửa sổ dòng (OVER, PARTITION BY, ORDER BY) mà không gộp dòng như GROUP BY. ROW_NUMBER đánh số duy nhất, RANK chừa khoảng trống khi đồng hạng, DENSE_RANK không chừa, LAG/LEAD lấy dòng trước/sau."
+---
+```sql
+-- Top 1 đơn lớn nhất mỗi user
+SELECT * FROM (
+  SELECT o.*,
+         ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY total DESC) AS rn
+  FROM orders o
+) t
+WHERE rn = 1;
+
+-- Chênh lệch so với đơn trước đó
+SELECT id, total,
+       total - LAG(total) OVER (PARTITION BY user_id ORDER BY created_at) AS diff
+FROM orders;
+```
+
+| Điểm 90, 90, 80 | ROW_NUMBER | RANK | DENSE_RANK |
+|---|---|---|---|
+| Kết quả | 1,2,3 | 1,1,3 | 1,1,2 |
+
+<Callout type="pitfall">
+Không dùng được window function trực tiếp trong `WHERE`, vì nó chạy sau WHERE. Hãy bọc bằng subquery hoặc CTE như ví dụ trên.
+</Callout>

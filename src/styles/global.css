@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+:root { color-scheme: light; --brand: #6366f1; --brand-2: #a855f7; }
+:root.dark { color-scheme: dark; }
+
+html { scroll-behavior: smooth; }
+body { @apply bg-slate-50 text-slate-800 antialiased dark:bg-[#0b0e17] dark:text-slate-300; }
+
+/* nền hero: lưới + vầng sáng */
+.hero-bg {
+  background:
+    radial-gradient(600px 300px at 15% 0%, color-mix(in srgb, var(--brand) 22%, transparent), transparent 70%),
+    radial-gradient(500px 280px at 90% 10%, color-mix(in srgb, var(--brand-2) 20%, transparent), transparent 70%);
+}
+.grid-bg {
+  background-image: linear-gradient(to right, rgb(100 116 139 / .10) 1px, transparent 1px), linear-gradient(to bottom, rgb(100 116 139 / .10) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at 50% 0%, #000 30%, transparent 75%);
+}
+.gradient-text { @apply bg-clip-text text-transparent; background-image: linear-gradient(120deg, var(--brand), var(--brand-2) 55%, #ec4899); }
+
+/* card có chiều sâu + viền màu nhấn khi hover */
+.card {
+  @apply relative rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 dark:border-white/10 dark:bg-white/[.03];
+}
+a.card:hover, button.card:hover {
+  @apply -translate-y-0.5 shadow-lg;
+  border-color: color-mix(in srgb, var(--accent, var(--brand)) 60%, transparent);
+  box-shadow: 0 10px 30px -12px color-mix(in srgb, var(--accent, var(--brand)) 45%, transparent);
+}
+.tile {
+  @apply grid shrink-0 place-items-center rounded-xl font-mono font-bold text-white;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
+  box-shadow: 0 6px 16px -6px var(--accent);
+}
+.chip { @apply inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300; }
+
+/* segmented control */
+.seg { @apply inline-flex rounded-xl border border-slate-200 bg-white p-1 dark:border-white/10 dark:bg-white/5; }
+.seg button { @apply rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900 dark:hover:text-white; }
+.seg button[aria-pressed='true'] { @apply bg-slate-900 text-white shadow dark:bg-white dark:text-slate-900; }
+
+/* flashcard 3D */
+.flip { perspective: 1200px; }
+.flip-inner { transition: transform .5s cubic-bezier(.2,.8,.2,1); transform-style: preserve-3d; }
+.flip-inner.is-flipped { transform: rotateY(180deg); }
+.flip-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flip-back { transform: rotateY(180deg); }
+
+/* Shiki dual theme */
+.astro-code, .astro-code span { color: var(--shiki-light); background-color: var(--shiki-light-bg); }
+.dark .astro-code, .dark .astro-code span { color: var(--shiki-dark); background-color: var(--shiki-dark-bg); }
+.astro-code { @apply my-5 overflow-x-auto rounded-xl border border-slate-200 p-4 text-[13.5px] leading-relaxed shadow-sm dark:border-white/10; }
+
+/* prose */
+.prose { --tw-prose-body: inherit; }
+.prose :where(h2) { @apply mt-10 mb-3 flex items-center gap-2 text-xl font-bold tracking-tight; }
+.prose :where(h2)::before { content: ''; @apply inline-block h-5 w-1 rounded-full; background: linear-gradient(var(--brand), var(--brand-2)); }
+.prose :where(code):not(pre code) { @apply rounded-md bg-indigo-50 px-1.5 py-0.5 font-mono text-[0.85em] font-medium text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300; }
+.prose :where(code):not(pre code)::before, .prose :where(code):not(pre code)::after { content: none; }
+.prose pre { background: transparent; padding: 0; }
+.prose :where(blockquote) { @apply rounded-r-xl border-l-4 border-teal-500 bg-teal-50 py-1 pl-5 pr-4 not-italic font-normal text-slate-800 dark:bg-teal-500/10 dark:text-slate-200; quotes: none; }
+.prose :where(blockquote p:first-of-type)::before, .prose :where(blockquote p:last-of-type)::after { content: none; }
+.prose table { @apply overflow-hidden rounded-xl text-sm; }
+.prose thead th { @apply bg-slate-100 px-3 py-2 dark:bg-white/5; }
+.prose tbody td { @apply px-3 py-2; }
+
+kbd { @apply rounded border border-slate-300 bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] dark:border-white/15 dark:bg-white/10; }
+:focus-visible { @apply outline-2 outline-offset-2 outline-indigo-500; }
+
+@media (prefers-reduced-motion: reduce) { .flip-inner { transition: none; } html { scroll-behavior: auto; } }

@@ -1,0 +1,43 @@
+---
+title: "Template literal types là gì? Ứng dụng thực tế"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [template-literal-types, string-types, advanced-types]
+answer: "Template literal type dựng string type từ các literal khác bằng cú pháp template, ví dụ `on${Capitalize<E>}`. Khi gặp union, nó sinh tích Descartes của mọi tổ hợp. Kết hợp `infer` để parse chuỗi (route params, event name) và với key remapping của mapped type để sinh API."
+---
+
+## Cú pháp và ví dụ
+
+```ts
+type Event = "click" | "focus";
+type Handler = `on${Capitalize<Event>}`;       // "onClick" | "onFocus"
+
+type Axis = "x" | "y";
+type Side = "top" | "bottom";
+type Pos = `${Axis}-${Side}`;                  // 4 tổ hợp
+
+// parse route params bằng infer
+type Params<S extends string> =
+  S extends `${string}:${infer P}/${infer Rest}` ? P | Params<`/${Rest}`>
+  : S extends `${string}:${infer P}` ? P
+  : never;
+type R = Params<"/users/:id/posts/:postId">;   // "id" | "postId"
+
+// sinh getter từ object type
+type Getters<T> = {
+  [K in keyof T & string as `get${Capitalize<K>}`]: () => T[K];
+};
+```
+
+- Có các helper chuỗi dựng sẵn: `Uppercase`, `Lowercase`, `Capitalize`, `Uncapitalize`.
+- `infer` trong template literal khớp chuỗi theo mẫu, và quy tắc là khớp ngắn nhất cho mỗi `infer` đứng trước một literal.
+- Ứng dụng: typed event emitter, key path (`"user.address.city"`), kiểu cho thư viện route, CSS-in-JS, i18n key.
+
+<Callout type="pitfall">
+Số tổ hợp của union nhân lên rất nhanh: hai union 100 phần tử cho 10.000 type, và TS giới hạn khoảng 100.000 thành viên union. Type đệ quy phức tạp cũng làm compile chậm và báo "Type instantiation is excessively deep".
+</Callout>
+
+<Callout type="tip">
+Template literal type chỉ tồn tại ở compile time; chuỗi người dùng nhập vẫn cần validate ở runtime.
+</Callout>

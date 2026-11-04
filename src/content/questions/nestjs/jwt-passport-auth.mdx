@@ -1,0 +1,36 @@
+---
+title: "Triển khai JWT authentication với Passport trong NestJS"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [jwt, passport, auth, guard]
+answer: "Dùng @nestjs/passport với passport-jwt: JwtStrategy extends PassportStrategy(Strategy) cấu hình cách lấy token và secret, validate() trả về user gắn vào req.user. Bảo vệ route bằng AuthGuard('jwt'). Login ký token bằng JwtService.signAsync."
+---
+```ts
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(config: ConfigService) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: config.getOrThrow('JWT_SECRET'),
+    });
+  }
+  validate(payload: { sub: number; role: string }) {
+    return { id: payload.sub, role: payload.role }; // -> req.user
+  }
+}
+
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {}
+```
+
+Login: kiểm tra mật khẩu bằng bcrypt rồi `this.jwt.signAsync(payload)` (cấu hình `JwtModule.register` với `expiresIn`).
+
+<Callout type="pitfall">
+Access token ngắn hạn kết hợp refresh token lưu hash phía server để thu hồi được. Không bỏ secret vào code và không nhét dữ liệu nhạy cảm vào payload vì JWT chỉ được ký, không được mã hóa.
+</Callout>
+
+<Callout type="tip">
+Route công khai: dùng decorator `@Public()` (SetMetadata) và để guard global đọc bằng Reflector để bỏ qua.
+</Callout>

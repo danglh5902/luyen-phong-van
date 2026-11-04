@@ -1,0 +1,31 @@
+---
+title: "Optimistic locking và pessimistic locking khác nhau thế nào?"
+topic: sql
+roles: [backend, fullstack]
+level: senior
+tags: [locking, concurrency, version, select-for-update]
+answer: "Pessimistic khoá dòng ngay khi đọc (SELECT ... FOR UPDATE) để chặn xung đột, phù hợp khi tranh chấp cao. Optimistic không khoá, dùng cột version và kiểm tra khi UPDATE; nếu 0 dòng bị ảnh hưởng thì xung đột và phải retry, phù hợp khi tranh chấp thấp."
+---
+```sql
+-- Pessimistic
+BEGIN;
+SELECT stock FROM products WHERE id = 7 FOR UPDATE;  -- khoá dòng
+UPDATE products SET stock = stock - 1 WHERE id = 7;
+COMMIT;
+
+-- Optimistic
+SELECT stock, version FROM products WHERE id = 7;    -- version = 5
+UPDATE products
+SET stock = 9, version = version + 1
+WHERE id = 7 AND version = 5;                        -- 0 row => xung đột, đọc lại và thử lại
+```
+
+| | Pessimistic | Optimistic |
+|---|---|---|
+| Khoá | giữ suốt transaction | không |
+| Tranh chấp cao | tốt | nhiều retry |
+| Rủi ro | deadlock, giảm throughput | lãng phí công việc khi retry |
+
+<Callout type="tip">
+Với trừ kho đơn giản, `UPDATE ... SET stock = stock - 1 WHERE id = 7 AND stock > 0` là atomic và không cần cả hai.
+</Callout>

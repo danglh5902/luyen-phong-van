@@ -1,0 +1,23 @@
+---
+title: "git reflog cứu commit bị mất như thế nào?"
+topic: git
+roles: [backend, fullstack, devops, frontend]
+level: mid
+tags: [reflog, recovery, reset, head]
+answer: "reflog ghi lại mọi lần HEAD và các ref di chuyển trong repo local (checkout, commit, reset, rebase). Sau reset --hard hoặc rebase hỏng, tìm hash cũ trong git reflog rồi git reset --hard hoặc git branch để khôi phục; commit chưa bị gc thì vẫn lấy lại được."
+---
+```bash
+git reset --hard HEAD~3        # lỡ tay mất 3 commit
+git reflog
+# 4f3a1b2 HEAD@{0}: reset: moving to HEAD~3
+# 9c8d7e6 HEAD@{1}: commit: feat: payment      <- commit cũ
+git reset --hard 9c8d7e6       # quay lại
+git branch rescue 9c8d7e6      # hoặc tạo nhánh giữ lại
+```
+
+- Reflog chỉ nằm ở máy local, không được push; mặc định giữ khoảng 90 ngày (commit mồ côi tới 30 ngày).
+- Dùng được cho nhánh bị xoá nhầm: tìm hash cuối của nhánh rồi `git branch <tên> <hash>`.
+
+<Callout type="pitfall">
+Thay đổi chưa commit bị `reset --hard` hay `checkout -- .` ghi đè thì reflog không cứu được, vì chưa từng thành commit.
+</Callout>

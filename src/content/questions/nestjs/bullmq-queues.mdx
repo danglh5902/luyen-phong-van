@@ -1,0 +1,40 @@
+---
+title: "Xử lý job nền với BullMQ trong NestJS: retry, idempotency và scale worker"
+topic: nestjs
+roles: [backend, fullstack]
+level: senior
+tags: [bullmq, queue, redis, background-jobs]
+answer: "@nestjs/bullmq dùng Redis làm broker: producer inject Queue và add job, consumer là class @Processor extends WorkerHost. Cấu hình attempts/backoff để retry, removeOnComplete để dọn, và thiết kế handler idempotent vì job có thể chạy lại (at-least-once). Scale bằng nhiều worker và concurrency."
+---
+```ts
+BullModule.registerQueue({ name: 'email' });   // trong module
+
+@Injectable()
+export class MailProducer {
+  constructor(@InjectQueue('email') private q: Queue) {}
+  send(userId: number) {
+    return this.q.add('welcome', { userId }, {
+      jobId: `welcome:${userId}`,              // chống trùng
+      attempts: 5, backoff: { type: 'exponential', delay: 1000 },
+      removeOnComplete: 1000, removeOnFail: false,
+    });
+  }
+}
+
+@Processor('email', { concurrency: 10 })
+export class MailConsumer extends WorkerHost {
+  async process(job: Job<{ userId: number }>) {
+    await this.mail.sendWelcome(job.data.userId);   // phải idempotent
+  }
+}
+```
+
+- Giao hàng **at-least-once**: job có thể chạy lại (retry, worker chết giữa chừng) nên cần idempotency key hoặc kiểm tra trạng thái trước khi gửi.
+- Job bị kẹt (stalled) được tự đưa lại hàng đợi; xử lý chậm quá thì cần tăng lock hoặc chia nhỏ.
+- Job trì hoãn/định kỳ: `delay`, `repeat` (cron) hoặc job scheduler.
+- Tách worker thành process riêng (không phục vụ HTTP) để scale độc lập và không tranh CPU với API.
+- Lắng nghe `failed` để cảnh báo; dead-letter bằng cách giữ job fail để xem lại.
+
+<Callout type="pitfall">
+Không để dữ liệu lớn trong job payload; chỉ đưa id rồi tải lại trong worker. Redis đặt `maxmemory-policy noeviction` để job không bị đuổi khi đầy bộ nhớ.
+</Callout>

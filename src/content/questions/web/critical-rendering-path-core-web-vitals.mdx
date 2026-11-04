@@ -1,0 +1,31 @@
+---
+title: "Critical rendering path và Core Web Vitals (LCP, INP, CLS): cách cải thiện?"
+topic: web
+roles: [frontend, fullstack]
+level: senior
+tags: [performance, core-web-vitals, lcp, inp, cls, rendering]
+answer: "Critical rendering path: DOM + CSSOM thành render tree, rồi layout, paint, composite. Core Web Vitals: LCP (tải nội dung chính, tốt dưới 2.5s), INP (phản hồi tương tác, dưới 200ms), CLS (ổn định layout, dưới 0.1). Cải thiện: giảm render-blocking, tối ưu ảnh/font, chia nhỏ JS, dành chỗ cho nội dung."
+---
+| Chỉ số | Đo gì | Ngưỡng tốt |
+|---|---|---|
+| LCP | Thời gian render phần tử lớn nhất | dưới 2.5s |
+| INP | Độ trễ phản hồi của tương tác (kể cả render) | dưới 200ms |
+| CLS | Tổng mức dịch chuyển layout ngoài ý muốn | dưới 0.1 |
+
+Cách cải thiện:
+
+- LCP: giảm TTFB (CDN, cache), preload ảnh/font hero, `fetchpriority="high"`, không lazy ảnh LCP, loại render-blocking CSS/JS, SSR/SSG.
+- INP: chia long task (trên 50ms) bằng `scheduler.yield()`/`setTimeout`, dời việc nặng sang Web Worker, giảm hydration và re-render thừa, debounce input.
+- CLS: khai báo `width`/`height` hoặc `aspect-ratio` cho ảnh/video/iframe/quảng cáo, `font-display` kèm preload font, không chèn nội dung phía trên nội dung đang xem.
+
+```html
+<link rel="preload" as="image" href="/hero.avif" fetchpriority="high" />
+<script src="/app.js" defer></script>
+```
+
+- `defer` chạy sau khi parse xong theo thứ tự; `async` chạy ngay khi tải xong, không đảm bảo thứ tự.
+- Đo bằng dữ liệu thực địa (CrUX, thư viện `web-vitals`, RUM) và lab (Lighthouse); lab không có INP thật, thay bằng TBT.
+
+<Callout type="pitfall">
+INP đã thay thế FID: nó xét mọi tương tác trong vòng đời trang chứ không chỉ lần đầu, nên JS chạy nặng sau khi tải vẫn làm điểm xấu.
+</Callout>

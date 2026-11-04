@@ -1,0 +1,43 @@
+---
+title: "Garbage collection hoạt động thế nào? Các nguyên nhân memory leak phổ biến"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [memory, gc, memory-leak, performance]
+answer: "JS dùng mark-and-sweep: object không còn reachable từ root (global, call stack) thì bị thu hồi; reference counting không xử lý được vòng tham chiếu. Leak xảy ra khi còn tham chiếu không cần: global, listener/timer chưa dọn, closure giữ object lớn, cache không giới hạn, DOM detached."
+---
+
+## Cơ chế
+
+Engine (V8) đánh dấu mọi object reachable từ root rồi giải phóng phần còn lại (mark-and-sweep). Vòng tham chiếu `a.b = b; b.a = a` không phải vấn đề nếu cả hai không còn reachable. V8 dùng generational GC: object mới ở young generation (thu hồi nhanh, thường xuyên), sống sót lâu được chuyển sang old generation. GC chạy xen kẽ/ đồng thời để giảm pause nhưng vẫn không hoàn toàn xác định thời điểm.
+
+## Nguyên nhân leak thường gặp
+
+| Nguyên nhân | Cách xử lý |
+|---|---|
+| Biến global vô tình (thiếu khai báo) | strict mode, module |
+| `addEventListener`, `setInterval` không gỡ | `removeEventListener`, `clearInterval`, `AbortController` |
+| Closure giữ object lớn | không capture thứ không dùng |
+| Cache/`Map` tăng vô hạn | giới hạn kích thước (LRU), `WeakMap` |
+| DOM node đã xóa nhưng vẫn được tham chiếu | bỏ tham chiếu khi remove |
+| Subscription (RxJS, WebSocket) không unsubscribe | cleanup trong `useEffect` return |
+
+```js
+function mount(el) {
+  const ctrl = new AbortController();
+  window.addEventListener("resize", onResize, { signal: ctrl.signal });
+  return () => ctrl.abort(); // gỡ listener một lần
+}
+```
+
+<Callout type="tip">
+Chẩn đoán: Chrome DevTools, tab Memory, chụp nhiều Heap snapshot và so sánh (Comparison), tìm Detached DOM nodes; hoặc Performance monitor xem JS heap tăng dần sau mỗi thao tác lặp lại.
+</Callout>
+
+<Callout type="pitfall">
+Một lần tăng bộ nhớ không phải là leak: cần thấy heap tăng đều sau nhiều chu kỳ GC (ép GC bằng nút thùng rác trong DevTools) rồi mới kết luận.
+</Callout>
+
+<Callout type="followup">
+WeakRef và FinalizationRegistry giải quyết gì, và vì sao không nên dựa vào chúng? (Thời điểm GC không đảm bảo, callback có thể không bao giờ chạy.)
+</Callout>

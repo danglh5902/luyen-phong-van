@@ -1,0 +1,27 @@
+---
+title: "So sánh REST, GraphQL và gRPC: khi nào chọn cái nào?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [rest, graphql, grpc, api]
+answer: "REST: dựa trên resource và HTTP, dễ cache, phổ biến. GraphQL: client chọn field cần lấy qua một endpoint, tránh over/under-fetching nhưng cache và rate limit phức tạp hơn. gRPC: Protobuf nhị phân trên HTTP/2, nhanh, có streaming, hợp giao tiếp service-to-service."
+---
+| | REST | GraphQL | gRPC |
+|---|---|---|---|
+| Giao thức | HTTP + JSON | HTTP (thường POST) + JSON | HTTP/2 + Protobuf |
+| Hợp đồng | OpenAPI (tùy chọn) | Schema bắt buộc | `.proto` bắt buộc |
+| Fetch dữ liệu | Server quyết định shape | Client chọn field | RPC có kiểu chặt |
+| Cache HTTP | Tự nhiên (GET) | Khó, cần client cache | Không dùng cache HTTP |
+| Dùng từ browser | Dễ | Dễ | Cần gRPC-Web/proxy |
+
+```graphql
+query { user(id: 1) { name posts(first: 3) { title } } }
+```
+
+- GraphQL giải quyết over-fetching và nhiều round trip, nhưng cần xử lý N+1 (DataLoader), giới hạn độ sâu/độ phức tạp query.
+- REST dễ dùng CDN và HTTP caching; GraphQL thường cache theo id entity ở client (Apollo, urql).
+- gRPC phù hợp microservices nội bộ, streaming hai chiều.
+
+<Callout type="tip">
+Không có đáp án tuyệt đối: public API nên REST, nhiều client với nhu cầu dữ liệu khác nhau cân nhắc GraphQL, nội bộ hiệu năng cao cân nhắc gRPC.
+</Callout>

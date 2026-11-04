@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import QuestionCard from '../../components/QuestionCard.astro';
+import Progress from '../../components/Progress';
+import { getCollection } from 'astro:content';
+import { topics, topicMap } from '../../data/topics';
+
+export function getStaticPaths() {
+  return topics.map((t) => ({ params: { topic: t.id } }));
+}
+const { topic: id } = Astro.params;
+const t = topicMap[id!];
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const order = { junior: 0, mid: 1, senior: 2 };
+const qs = (await getCollection('questions'))
+  .filter((q) => q.data.topic === id)
+  .sort((a, b) => order[a.data.level] - order[b.data.level] || a.data.title.localeCompare(b.data.title));
+const n = (l: string) => qs.filter((q) => q.data.level === l).length;
+const filters = [['all', 'Tất cả', qs.length], ['junior', 'Junior', n('junior')], ['mid', 'Mid', n('mid')], ['senior', 'Senior', n('senior')]];
+---
+<BaseLayout title={t.name}>
+  <a href={`${base}/`} class="text-sm font-medium text-indigo-600 hover:underline">← Trang chủ</a>
+  <header class="relative mt-4 overflow-hidden rounded-3xl border border-slate-200 p-8 dark:border-white/10" style={`--accent:${t.color}`}>
+    <div class="absolute inset-0 -z-10 opacity-20" style="background:radial-gradient(500px 220px at 0% 0%, var(--accent), transparent 70%)"></div>
+    <div class="flex flex-wrap items-center gap-5">
+      <div class="tile h-16 w-16 text-xl">{t.icon}</div>
+      <div class="min-w-0 flex-1">
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{t.name}</h1>
+        <p class="mt-1 text-slate-500">{t.desc}</p>
+      </div>
+      <a href={`${base}/flashcards/${t.id}/`} class="rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90">🃏 Ôn bằng flashcard</a>
+    </div>
+    <div class="mt-6 max-w-md"><Progress client:load ids={qs.map((q) => q.id)} color={t.color} /></div>
+  </header>
+
+  <div class="mt-8 flex flex-wrap items-center gap-3">
+    <div class="seg" role="group" aria-label="Lọc theo level">
+      {filters.map(([v, l, c]) => <button type="button" data-f={v} aria-pressed="false">{l} <span class="opacity-60">{c}</span></button>)}
+    </div>
+    <input id="q-filter" type="search" placeholder="Lọc trong chủ đề này…" aria-label="Lọc câu hỏi"
+      class="h-10 min-w-48 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm sm:max-w-xs dark:border-white/10 dark:bg-white/5" />
+  </div>
+
+  <div class="mt-6 grid gap-4 md:grid-cols-2" id="q-list">
+    {qs.map((q) => <QuestionCard q={q} base={base} />)}
+  </div>
+  <p id="q-empty" class="mt-10 hidden text-center text-slate-500">Không có câu hỏi phù hợp.</p>
+  {qs.length === 0 && <p class="mt-10 text-center text-slate-500">Chưa có câu hỏi cho chủ đề này.</p>}
+</BaseLayout>
+
+<script>
+  const btns = document.querySelectorAll<HTMLButtonElement>('.seg button');
+  const cards = document.querySelectorAll<HTMLElement>('.question-card');
+  const input = document.getElementById('q-filter') as HTMLInputElement;
+  const empty = document.getElementById('q-empty')!;
+  let level = 'all';
+
+  function apply() {
+    const kw = input.value.trim().toLowerCase();
+    let shown = 0;
+    cards.forEach((c) => {
+      const ok = (level === 'all' || c.dataset.level === level) && (!kw || (c.dataset.text ?? '').includes(kw));
+      c.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+    btns.forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.f === level)));
+    empty.classList.toggle('hidden', shown > 0 || cards.length === 0);
+  }
+  btns.forEach((b) => b.addEventListener('click', () => { level = b.dataset.f!; apply(); }));
+  input.addEventListener('input', apply);
+
+  // đánh dấu câu đã thuộc
+  function marks() {
+    let learned: string[] = [];
+    try { learned = JSON.parse(localStorage.getItem('lpv:learned') ?? '[]'); } catch {}
+    cards.forEach((c) => c.querySelector('.learned-mark')?.classList.toggle('hidden', !learned.includes(c.dataset.id!)));
+  }
+  marks();
+  window.addEventListener('lpv:progress', marks);
+  apply();
+</script>

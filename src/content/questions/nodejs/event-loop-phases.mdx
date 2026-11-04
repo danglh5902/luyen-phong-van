@@ -1,0 +1,30 @@
+---
+title: "Các pha (phases) của event loop trong libuv hoạt động ra sao?"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [event-loop, libuv, phases]
+answer: "Mỗi vòng lặp libuv đi qua: timers, pending callbacks, idle/prepare, poll (chờ và xử lý I/O), check (setImmediate), close callbacks. Giữa các callback, Node xả hết hàng đợi microtask (nextTick rồi Promise)."
+---
+import Runnable from "../../../components/Runnable";
+
+| Pha | Chạy gì |
+|---|---|
+| timers | Callback `setTimeout`/`setInterval` đã đến hạn |
+| pending callbacks | Một số callback lỗi hệ thống (TCP error...) hoãn từ vòng trước |
+| idle, prepare | Nội bộ libuv |
+| poll | Lấy sự kiện I/O mới, chạy callback I/O; chặn chờ nếu không có gì khác |
+| check | Callback `setImmediate` |
+| close callbacks | `socket.on('close')`... |
+
+Quy tắc: poll chỉ chờ khi chưa có `setImmediate` và chưa có timer đến hạn; nếu có `setImmediate`, loop chuyển sang check ngay. Timer có độ trễ tối thiểu, không đảm bảo chính xác.
+
+Trong sandbox trình duyệt không có `setImmediate`, nhưng thứ tự microtask trước macrotask vẫn giống Node:
+
+<Runnable client:visible lang="js" code={`setTimeout(() => console.log('3. timeout 0 (macrotask)'), 0);
+Promise.resolve().then(() => console.log('2. promise (microtask)'));
+console.log('1. đồng bộ');`} />
+
+<Callout type="pitfall">
+`setTimeout(fn, 0)` và `setImmediate(fn)` gọi từ module chính có thứ tự không xác định (tùy hiệu năng tiến trình). Gọi bên trong callback I/O thì `setImmediate` luôn chạy trước.
+</Callout>

@@ -1,0 +1,26 @@
+---
+title: "WHERE và HAVING khác nhau thế nào?"
+topic: sql
+roles: [backend, fullstack, devops]
+level: junior
+tags: [group-by, having, aggregate]
+answer: "WHERE lọc từng dòng trước khi GROUP BY nên không dùng được hàm tổng hợp; HAVING lọc các nhóm sau khi GROUP BY nên dùng được COUNT, SUM, AVG. Nên lọc sớm bằng WHERE để giảm số dòng phải gom nhóm."
+---
+```sql
+-- Khách có > 5 đơn trong năm 2025
+SELECT user_id, COUNT(*) AS n, SUM(total) AS revenue
+FROM orders
+WHERE created_at >= '2025-01-01'   -- lọc dòng trước
+GROUP BY user_id
+HAVING COUNT(*) > 5;               -- lọc nhóm sau
+```
+
+| | WHERE | HAVING |
+|---|---|---|
+| Lọc trên | từng dòng | từng nhóm |
+| Chạy | trước GROUP BY | sau GROUP BY |
+| Dùng aggregate | Không | Có |
+
+<Callout type="tip">
+Điều kiện không dùng aggregate hãy đặt ở `WHERE` để engine bỏ dòng sớm và có thể tận dụng index.
+</Callout>

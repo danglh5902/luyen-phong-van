@@ -1,0 +1,39 @@
+---
+title: "Giải thích 4 tầng cache của Next.js App Router và cách revalidate"
+topic: nextjs
+roles: [frontend, fullstack, backend]
+level: senior
+tags: [caching, data-cache, full-route-cache, router-cache, revalidate]
+answer: "Request Memoization (dedupe fetch trong một lần render), Data Cache (kết quả fetch, bền qua request/deploy), Full Route Cache (HTML + RSC payload của route static, trên server) và Router Cache (RSC payload trong bộ nhớ browser). Revalidate bằng revalidateTag/revalidatePath hoặc next.revalidate."
+---
+| Tầng | Ở đâu | Tồn tại | Làm mới bằng |
+|---|---|---|---|
+| Request Memoization | server, React | trong một lần render | tự hết sau request |
+| Data Cache | server | bền, qua request và deploy | `revalidateTag`, `revalidatePath`, `next.revalidate`, `cache: 'no-store'` |
+| Full Route Cache | server | bền đến khi revalidate hoặc redeploy | revalidate Data Cache liên quan |
+| Router Cache | client (memory) | theo phiên/thời gian | `router.refresh()`, Server Action gọi revalidate |
+
+```ts
+// Gắn tag + TTL cho Data Cache
+const res = await fetch("https://api.x.com/posts", {
+  next: { tags: ["posts"], revalidate: 3600 },
+});
+
+// Server Action sau khi mutate
+import { revalidateTag, revalidatePath } from "next/cache";
+revalidateTag("posts");   // làm mới mọi fetch gắn tag
+revalidatePath("/posts"); // làm mới route (Data + Full Route Cache)
+```
+
+**Khác biệt phiên bản (quan trọng):**
+- Next 14: `fetch` mặc định `force-cache`; Router Cache giữ page dynamic 30s, static 5 phút.
+- Next 15: `fetch` mặc định không cache (như `no-store`); Router Cache `staleTime` của page segment là 0 (layout/loading vẫn dùng lại khi back/forward); GET Route Handler không cache mặc định. Tùy chọn có thể bật lại qua `experimental.staleTimes`.
+- Request Memoization chỉ áp dụng cho `GET` fetch; truy vấn DB bọc bằng `cache()` của React, hoặc `unstable_cache` để lưu vào Data Cache.
+
+<Callout type="pitfall">
+Dùng Dynamic API (`cookies()`, `headers()`) hoặc `no-store` làm route bỏ qua Full Route Cache nhưng Data Cache của các fetch có cache vẫn hoạt động riêng. Hai tầng này độc lập.
+</Callout>
+
+<Callout type="followup">
+`revalidatePath` trong Server Action còn xóa Router Cache của client hiện tại. Còn trong Route Handler thì chỉ làm mới phía server, lần điều hướng sau mới thấy dữ liệu mới.
+</Callout>

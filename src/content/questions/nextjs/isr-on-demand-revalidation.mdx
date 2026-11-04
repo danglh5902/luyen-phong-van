@@ -1,0 +1,33 @@
+---
+title: "ISR và on-demand revalidation: revalidatePath và revalidateTag dùng thế nào?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: mid
+tags: [isr, revalidate, caching]
+answer: "ISR cập nhật trang tĩnh mà không build lại: `revalidate = N` (time-based) hoặc on-demand bằng `revalidatePath`/`revalidateTag` gọi từ Server Action hoặc Route Handler. Cơ chế là stale-while-revalidate: người dùng đầu tiên sau khi hết hạn vẫn nhận bản cũ."
+---
+```tsx
+// Time-based
+export const revalidate = 3600; // giây
+
+// Gắn tag cho dữ liệu
+const posts = await fetch(url, { next: { tags: ["posts"], revalidate: 3600 } });
+
+// On-demand trong Server Action / Route Handler
+"use server";
+import { revalidateTag, revalidatePath } from "next/cache";
+export async function publish() {
+  await db.post.create(/* ... */);
+  revalidateTag("posts");        // mọi fetch có tag này
+  revalidatePath("/blog");       // một đường dẫn cụ thể
+}
+```
+
+- Webhook từ CMS gọi Route Handler có secret rồi `revalidateTag`, nên nội dung đổi gần như tức thì.
+- Dữ liệu không dùng `fetch` (ORM) bọc bằng `unstable_cache` với `tags` (hoặc `use cache` ở Next 15 canary/16).
+- Next 15: `fetch` không còn cache mặc định, cần `cache: "force-cache"` hoặc `revalidate` để vào Data Cache.
+- Self-host nhiều instance cần cache handler dùng chung (Redis) nếu không mỗi instance revalidate riêng.
+
+<Callout type="pitfall">
+`revalidateTag` ở Route Handler công khai không có xác thực cho phép ai cũng xả cache; luôn kiểm tra secret.
+</Callout>

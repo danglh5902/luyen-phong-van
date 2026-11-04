@@ -1,0 +1,30 @@
+---
+title: "Các giá trị `position` hoạt động ra sao? `z-index` và stacking context là gì?"
+topic: html-css
+roles: [frontend, fullstack]
+level: mid
+tags: [position, z-index, stacking-context]
+answer: "static là mặc định; relative dịch theo vị trí gốc và làm mốc cho con absolute; absolute định vị theo tổ tiên positioned gần nhất; fixed theo viewport; sticky dính khi cuộn qua ngưỡng. z-index chỉ so sánh trong cùng một stacking context nên z-index lớn vẫn có thể bị đè."
+---
+| Giá trị | Định vị theo | Còn chiếm chỗ trong flow |
+|---|---|---|
+| `static` | Flow bình thường | Có |
+| `relative` | Vị trí gốc của chính nó | Có |
+| `absolute` | Tổ tiên `positioned` gần nhất | Không |
+| `fixed` | Viewport | Không |
+| `sticky` | Container cuộn gần nhất, sau khi qua ngưỡng | Có |
+
+```css
+.header { position: sticky; top: 0; z-index: 10; }
+.modal  { position: fixed; inset: 0; z-index: 1000; }
+```
+
+Stacking context mới được tạo bởi: root, `position` + `z-index` khác `auto`, `opacity` nhỏ hơn 1, `transform`, `filter`, `isolation: isolate`, flex/grid item có `z-index`...
+
+<Callout type="pitfall">
+Con có `z-index: 9999` vẫn nằm dưới phần tử khác nếu cha của nó tạo stacking context có thứ tự thấp hơn. Thêm `transform` hoặc `opacity` vào cha cũng có thể vô tình tạo context mới.
+</Callout>
+
+<Callout type="tip">
+`sticky` không hoạt động nếu thiếu ngưỡng `top`/`bottom`, hoặc tổ tiên có `overflow` khác `visible` làm nó trở thành container cuộn gần nhất.
+</Callout>

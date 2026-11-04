@@ -1,0 +1,35 @@
+---
+title: "Content Security Policy (CSP) là gì? Các security header quan trọng khác?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: senior
+tags: [csp, security-headers, xss, hsts]
+answer: "CSP là header cho trình duyệt biết nguồn nào được phép tải script, style, ảnh..., nhờ đó giảm thiệt hại của XSS (script chèn vào bị chặn nếu không khớp policy). Nên dùng nonce hoặc hash thay vì 'unsafe-inline', và thử bằng Report-Only trước khi enforce."
+---
+```http
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' 'nonce-r4nd0m';
+  img-src 'self' https: data:;
+  object-src 'none'; base-uri 'self'; frame-ancestors 'none'
+```
+
+```html
+<script nonce="r4nd0m">/* inline script được phép */</script>
+```
+
+| Header | Công dụng |
+|---|---|
+| `Strict-Transport-Security` | Ép HTTPS |
+| `X-Content-Type-Options: nosniff` | Chặn đoán MIME type |
+| `Referrer-Policy` | Giới hạn thông tin referrer |
+| `Permissions-Policy` | Tắt API như camera, geolocation |
+| `frame-ancestors` (CSP) | Chống clickjacking (thay `X-Frame-Options`) |
+
+- Nonce phải sinh ngẫu nhiên mới cho mỗi response; hash dùng cho script inline cố định.
+- `strict-dynamic` cho phép script tin cậy tự nạp thêm script mà không liệt kê domain.
+- Triển khai dần: `Content-Security-Policy-Report-Only` kèm `report-to`, quan sát vi phạm rồi mới enforce.
+
+<Callout type="pitfall">
+Whitelist domain rộng (như CDN công cộng) hoặc `'unsafe-inline'`/`'unsafe-eval'` làm CSP gần như vô dụng trước XSS. CSP là lớp phòng thủ bổ sung, không thay thế việc escape output.
+</Callout>

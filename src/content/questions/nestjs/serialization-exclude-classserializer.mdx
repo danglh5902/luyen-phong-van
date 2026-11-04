@@ -1,0 +1,37 @@
+---
+title: "Ẩn field nhạy cảm khi trả response: ClassSerializerInterceptor và @Exclude"
+topic: nestjs
+roles: [backend, fullstack]
+level: junior
+tags: [serialization, class-transformer, exclude, security]
+answer: "Dùng class-transformer: đánh dấu @Exclude() (hoặc @Expose với strategy excludeAll) trên entity/DTO và bật ClassSerializerInterceptor để loại field như password khỏi JSON. Interceptor chỉ hoạt động khi trả về instance của class, không phải plain object."
+---
+```ts
+export class UserEntity {
+  id: number;
+  email: string;
+  @Exclude() password: string;
+
+  @Transform(({ value }) => value.toISOString())
+  createdAt: Date;
+
+  constructor(partial: Partial<UserEntity>) { Object.assign(this, partial); }
+}
+
+@UseInterceptors(ClassSerializerInterceptor)
+@Controller('users')
+export class UsersController {
+  @Get(':id')
+  async one(@Param('id') id: number) {
+    return new UserEntity(await this.users.find(id));  // phải là instance
+  }
+}
+```
+
+- Bật toàn cục: `app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))`.
+- `@SerializeOptions({ groups: ['admin'] })` cho phép trả field khác nhau theo nhóm.
+- Cách an toàn hơn: dùng DTO response riêng, chỉ liệt kê đúng field được phép (whitelist) thay vì loại trừ (blacklist).
+
+<Callout type="pitfall">
+Trả plain object (ví dụ kết quả `.lean()` hay query builder raw) thì `@Exclude` không có tác dụng và password vẫn bị lộ. Nên dùng whitelist response DTO.
+</Callout>

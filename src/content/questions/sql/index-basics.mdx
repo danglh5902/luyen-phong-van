@@ -1,0 +1,22 @@
+---
+title: "Index trong database là gì? Khi nào làm chậm hệ thống?"
+topic: sql
+roles: [backend, fullstack]
+level: mid
+tags: [index, performance]
+answer: "Index là cấu trúc dữ liệu (thường B-Tree) giúp tìm dòng nhanh mà không quét toàn bảng; đổi lại tốn dung lượng và làm INSERT/UPDATE/DELETE chậm hơn."
+---
+```sql
+CREATE INDEX idx_orders_user_date ON orders (user_id, created_at);
+
+-- Dùng được index (khớp tiền tố trái)
+SELECT * FROM orders WHERE user_id = 7 AND created_at > '2026-01-01';
+-- KHÔNG dùng tốt: bỏ qua cột đầu
+SELECT * FROM orders WHERE created_at > '2026-01-01';
+
+EXPLAIN SELECT ...;  -- kiểm tra có dùng index không
+```
+
+<Callout type="tip">
+Composite index tuân theo quy tắc **leftmost prefix**. Hàm trên cột (`WHERE LOWER(email)=...`) cũng làm mất index.
+</Callout>

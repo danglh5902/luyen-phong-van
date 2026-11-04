@@ -1,0 +1,33 @@
+---
+title: "Viết RBAC bằng Guard, Reflector và custom decorator như thế nào?"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [guard, rbac, reflector, decorator]
+answer: "Tạo decorator @Roles() bằng SetMetadata, rồi guard implements CanActivate dùng Reflector.getAllAndOverride đọc metadata từ handler và class, so sánh với req.user.roles. Guard trả boolean; false thì Nest ném 403."
+---
+```ts
+export const ROLES_KEY = 'roles';
+export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
+
+@Injectable()
+export class RolesGuard implements CanActivate {
+  constructor(private reflector: Reflector) {}
+  canActivate(ctx: ExecutionContext): boolean {
+    const required = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY, [ctx.getHandler(), ctx.getClass()]);
+    if (!required) return true;
+    const { user } = ctx.switchToHttp().getRequest();
+    return required.some((r) => user?.roles?.includes(r));
+  }
+}
+// @UseGuards(JwtAuthGuard, RolesGuard) @Roles('admin') @Delete(':id') ...
+```
+
+<Callout type="pitfall">
+Thứ tự guard trong `@UseGuards` quan trọng: guard xác thực phải đứng trước RolesGuard để `req.user` đã tồn tại. Trả `false` cho ra 403, muốn 401 phải ném `UnauthorizedException`.
+</Callout>
+
+<Callout type="tip">
+`getAllAndOverride` lấy giá trị đầu tiên tìm thấy (handler ưu tiên hơn class); `getAllAndMerge` gộp mảng của cả hai.
+</Callout>

@@ -1,0 +1,31 @@
+---
+title: "Conditional rendering và render danh sách trong React: các cách và lỗi hay gặp?"
+topic: react
+roles: [frontend, fullstack]
+level: junior
+tags: [jsx, list, conditional-rendering]
+answer: "Dùng `if`/early return, toán tử ba ngôi hoặc `&&` để render có điều kiện; dùng `map` kèm `key` ổn định cho danh sách. Cẩn thận `0 && <X />` sẽ render ra số 0, hãy ép về boolean hoặc dùng ba ngôi."
+---
+```jsx
+function Inbox({ mails }) {
+  if (!mails) return <Spinner />;               // early return
+  return (
+    <>
+      {mails.length > 0 ? (                      // ba ngôi
+        <ul>{mails.map((m) => <li key={m.id}>{m.title}</li>)}</ul>
+      ) : (
+        <p>Hộp thư trống</p>
+      )}
+      {mails.length > 0 && <Footer />}           // an toàn vì là boolean
+    </>
+  );
+}
+```
+
+- `null`, `undefined`, `true`, `false` không render gì; số `0` và chuỗi rỗng thì có (`0` hiện ra).
+- Mỗi phần tử trong list cần `key` duy nhất và ổn định, đặt ở phần tử ngoài cùng của `map`.
+- Lọc/sắp xếp nên làm trên bản sao (`[...arr].sort()`), không mutate props/state.
+
+<Callout type="pitfall">
+`count && <Badge />` với `count = 0` hiển thị "0". Viết `count > 0 && <Badge />`.
+</Callout>

@@ -1,0 +1,35 @@
+---
+title: "Scale Socket.IO/WebSocket nhiều instance: sticky session và Redis adapter"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [socket.io, websocket, redis, scaling]
+answer: "WebSocket là kết nối có trạng thái gắn với một instance. Khi scale ngang cần sticky session (nếu có HTTP long-polling) để handshake về cùng node, và Redis adapter (pub/sub) để broadcast/emit tới room vượt qua các instance. Cần tính cả reconnect, backpressure và giới hạn file descriptor."
+---
+Vấn đề khi chạy nhiều instance sau load balancer:
+
+1. Handshake Socket.IO gồm nhiều request HTTP (polling) rồi mới nâng cấp lên WebSocket, nên cần **sticky session** (theo IP hash/cookie), hoặc ép `transports: ['websocket']`.
+2. `io.to('room').emit()` chỉ chạm các socket nằm trên **instance hiện tại**. Cần adapter để các node chia sẻ sự kiện.
+
+```js
+const { createAdapter } = require('@socket.io/redis-adapter');
+const { createClient } = require('redis');
+
+const pub = createClient({ url: process.env.REDIS_URL });
+const sub = pub.duplicate();
+await Promise.all([pub.connect(), sub.connect()]);
+
+io.adapter(createAdapter(pub, sub));   // emit/room hoạt động xuyên instance
+```
+
+| Mối quan tâm | Hướng xử lý |
+|---|---|
+| Mất kết nối khi deploy | Graceful shutdown, client tự reconnect với backoff + jitter |
+| Trạng thái presence | Lưu trong Redis, không giữ trong memory của process |
+| Client chậm | Kiểm tra `bufferedAmount`, giới hạn kích thước message |
+| Giới hạn tài nguyên | Tăng `ulimit -n`, theo dõi RAM mỗi kết nối |
+| Auth | Xác thực ở handshake (token), không tin dữ liệu client sau đó |
+
+<Callout type="pitfall">
+Redis pub/sub là fire-and-forget: instance đang mất kết nối sẽ bỏ lỡ message. Với dữ liệu cần đảm bảo, dùng Redis Streams hoặc cho client đồng bộ lại (resync) sau khi reconnect.
+</Callout>

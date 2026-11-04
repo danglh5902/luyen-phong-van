@@ -1,0 +1,16 @@
+---
+title: "CAP theorem là gì?"
+topic: system-design
+roles: [backend, devops]
+level: senior
+tags: [distributed, consistency]
+answer: "Khi hệ thống phân tán gặp network partition, bạn chỉ chọn được một: Consistency (mọi node thấy cùng dữ liệu) hoặc Availability (luôn trả lời). Partition không thể tránh nên thực tế là chọn CP hay AP."
+---
+| Loại | Ưu tiên | Ví dụ |
+|---|---|---|
+| CP | Nhất quán, có thể từ chối request khi partition | ZooKeeper, etcd, HBase |
+| AP | Luôn phản hồi, dữ liệu có thể tạm lệch (eventual consistency) | Cassandra, DynamoDB (mặc định) |
+
+<Callout type="tip">
+Trả lời hay: nêu theo nghiệp vụ. Số dư tài khoản cần CP; số lượt like có thể AP.
+</Callout>

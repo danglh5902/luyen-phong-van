@@ -1,0 +1,34 @@
+---
+title: "Custom hook là gì? So với HOC và render props thì sao?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [hooks, custom-hooks, hoc, render-props]
+answer: "Custom hook là hàm bắt đầu bằng use, gọi các hook khác để tái sử dụng logic có state; mỗi lần gọi có state riêng. So với HOC và render props, hook không thêm tầng component (wrapper hell), dễ compose và dễ type hơn."
+---
+```jsx
+function useDebounce(value, ms = 300) {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return v;
+}
+```
+
+Custom hook chia sẻ logic, không chia sẻ state: hai component gọi `useDebounce` có hai state độc lập.
+
+| Cách | Nhược điểm |
+|---|---|
+| HOC `withAuth(Comp)` | Wrapper lồng nhau, xung đột tên props, khó type |
+| Render props | Callback lồng sâu (JSX hell) |
+| Custom hook | Chỉ tái dùng logic, không tái dùng markup |
+
+<Callout type="tip">
+HOC và render props vẫn hữu ích: HOC cho cross-cutting concern bọc nhiều component (ví dụ `connect` kiểu cũ), render props khi component cần để bên ngoài quyết định markup. Còn lại ưu tiên hook.
+</Callout>
+
+<Callout type="pitfall">
+Tuân thủ Rules of Hooks: chỉ gọi ở top level của component/hook, không trong if/loop. Tên phải bắt đầu bằng `use` để linter kiểm tra được.
+</Callout>

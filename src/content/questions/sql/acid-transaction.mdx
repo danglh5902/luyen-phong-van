@@ -1,0 +1,18 @@
+---
+title: "ACID là gì? Transaction dùng để làm gì?"
+topic: sql
+roles: [backend, fullstack]
+level: mid
+tags: [transaction, acid]
+answer: "ACID: Atomicity (all-or-nothing), Consistency (giữ ràng buộc), Isolation (giao dịch song song không ảnh hưởng nhau), Durability (đã commit thì không mất)."
+---
+```sql
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;
+COMMIT;   -- hoặc ROLLBACK nếu có lỗi: cả hai cùng thành công hoặc cùng huỷ
+```
+
+<Callout type="followup">
+Các mức isolation: Read Uncommitted → Read Committed → Repeatable Read → Serializable; càng cao càng an toàn nhưng càng chậm. Hãy kể được dirty read, non-repeatable read, phantom read.
+</Callout>

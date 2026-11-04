@@ -1,0 +1,22 @@
+---
+title: "Caching: các chiến lược và vấn đề cần lưu ý?"
+topic: system-design
+roles: [backend, fullstack, devops]
+level: senior
+tags: [cache, redis]
+answer: "Cache-aside (app tự đọc/ghi cache), write-through, write-back. Khó nhất là invalidation, kèm các vấn đề cache stampede, penetration và dữ liệu cũ (stale)."
+---
+```js
+// Cache-aside
+async function getUser(id) {
+  const cached = await redis.get(`user:${id}`);
+  if (cached) return JSON.parse(cached);
+  const user = await db.users.find(id);
+  await redis.set(`user:${id}`, JSON.stringify(user), 'EX', 300); // TTL 5 phút
+  return user;
+}
+```
+
+<Callout type="pitfall">
+Stampede: key hot hết hạn, hàng nghìn request cùng đập xuống DB. Giảm bằng lock/single-flight, TTL ngẫu nhiên (jitter) hoặc làm mới sớm.
+</Callout>

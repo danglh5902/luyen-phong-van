@@ -1,0 +1,44 @@
+---
+title: "Iterator protocol và generator hoạt động thế nào? Dùng khi nào?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [generator, iterator, symbol, lazy]
+answer: "Iterable có method `[Symbol.iterator]()` trả về iterator với `next()` cho `{ value, done }`. Generator (`function*`) tạo iterator có thể tạm dừng ở `yield` và nhận giá trị qua `next(x)`, cho phép lazy evaluation, chuỗi vô hạn và luồng điều khiển hai chiều."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`function* range(start, end) {
+  for (let i = start; i < end; i++) yield i;
+}
+console.log([...range(0, 4)]);
+
+const it = range(0, 2);
+console.log(it.next(), it.next(), it.next());
+
+function* talk() {
+  const x = yield 1;      // dừng, nhận giá trị từ next(5)
+  console.log("got", x);
+  yield x * 2;
+}
+const t = talk();
+console.log(t.next().value);
+console.log(t.next(5).value);
+
+const iterable = { *[Symbol.iterator]() { yield "a"; yield "b"; } };
+console.log([...iterable]);`} />
+
+- `for...of`, spread, destructuring, `Array.from`, `Map`/`Set` constructor đều dùng iterator protocol.
+- Generator lazy: chỉ tính giá trị khi được yêu cầu, nên biểu diễn được chuỗi vô hạn (`while (true) yield ...`) kết hợp `take(n)`.
+- `yield*` ủy quyền sang iterable khác; `return()`/`throw()` cho phép đóng/ném lỗi vào generator.
+- `async function*` + `for await...of` dùng cho stream và phân trang.
+
+<Callout type="pitfall">
+Iterator dùng một lần: generator đã hết (done) không chạy lại được; cần gọi lại hàm generator. `break` trong `for...of` sẽ gọi `return()`, kích hoạt `finally` bên trong generator.
+</Callout>
+
+<Callout type="followup">
+Redux-saga dùng generator thế nào? (Saga yield các effect object, middleware thực thi rồi `next(kết quả)`, nhờ vậy test được mà không cần mock async.)
+</Callout>

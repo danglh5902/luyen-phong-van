@@ -1,0 +1,32 @@
+---
+title: "React 19 có gì mới: use, Actions, useOptimistic?"
+topic: react
+roles: [frontend, fullstack]
+level: senior
+tags: [react-19, actions, use, useOptimistic]
+answer: "React 19 thêm Actions (hàm async trong form action/transition, tự quản lý pending, lỗi), useActionState, useFormStatus, useOptimistic cho UI lạc quan, và hook use đọc Promise/Context trong render (kể cả có điều kiện). ref giờ là prop thường."
+---
+```jsx
+function Comments({ promise }) {
+  const items = use(promise); // suspend tới khi promise resolve
+  const [optimistic, addOptimistic] = useOptimistic(
+    items,
+    (cur, text) => [...cur, { text, sending: true }]
+  );
+
+  async function action(formData) {
+    addOptimistic(formData.get("text"));      // hiện ngay
+    await postComment(formData.get("text"));  // xong/lỗi: về state thật
+  }
+  return <form action={action}><input name="text" /></form>;
+}
+```
+
+- `use(resource)`: đọc Promise (kết hợp Suspense) hoặc Context; khác hook thường ở chỗ gọi được trong `if`/loop. Promise nên được tạo ngoài render (cache, loader, Server Component).
+- Actions: truyền hàm vào `<form action>`; form tự reset khi thành công. `useActionState` trả về state, action, pending; `useFormStatus` đọc pending của form cha.
+- `useOptimistic`: state tạm hiển thị trong lúc action chạy, tự quay về giá trị thật khi xong hoặc lỗi.
+- Khác: `ref` là prop (hết cần `forwardRef`), `title`/`meta` được hoist lên head, ref callback có thể trả về hàm cleanup.
+
+<Callout type="pitfall">
+Không tạo Promise mới ngay trong render rồi `use` nó: mỗi lần render là một Promise mới, gây suspend lặp lại.
+</Callout>

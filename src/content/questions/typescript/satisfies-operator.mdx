@@ -1,0 +1,39 @@
+---
+title: "Toán tử satisfies khác type annotation và `as` thế nào?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [satisfies, type-inference, as-const]
+answer: "`satisfies` (TS 4.9) kiểm tra giá trị khớp một type nhưng giữ nguyên kiểu suy luận cụ thể của nó. Annotation `: T` làm rộng kiểu về T, còn `as T` ép kiểu bỏ qua kiểm tra. Dùng `satisfies` để vừa bắt lỗi cấu hình sai vừa giữ literal/key chính xác."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="ts" code={`type Color = "red" | "green";
+
+const palette = {
+  red: [255, 0, 0],
+  green: "#0f0",
+} satisfies Record<Color, string | number[]>;
+
+// palette.red vẫn là number[] nên .map hợp lệ; palette.green là string
+console.log(palette.red.map((n) => n / 255));
+console.log(palette.green.toUpperCase());
+
+// Với annotation: palette.red có kiểu string | number[], .map sẽ lỗi
+// Với satisfies: gõ sai key (vd. "blue") hoặc thiếu key sẽ báo lỗi ngay`} />
+
+| | Kiểm tra | Kiểu kết quả |
+|---|---|---|
+| `const x: T = v` | có | T (rộng) |
+| `v as T` | lỏng, bỏ qua nhiều lỗi | T |
+| `v satisfies T` | có (cả excess property) | kiểu suy luận của `v` |
+
+<Callout type="tip">
+Kết hợp `as const satisfies T` để vừa readonly/literal vừa được kiểm tra, thường dùng cho config, routes, bảng i18n.
+</Callout>
+
+<Callout type="pitfall">
+`as T` có thể che giấu lỗi (`{} as User` biên dịch được). Ưu tiên `satisfies` hoặc annotation, chỉ dùng `as` khi bạn biết nhiều hơn compiler và có lý do rõ ràng.
+</Callout>

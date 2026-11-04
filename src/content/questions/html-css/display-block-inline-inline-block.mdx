@@ -1,0 +1,26 @@
+---
+title: "Khác nhau giữa `display: block`, `inline` và `inline-block`?"
+topic: html-css
+roles: [frontend, fullstack]
+level: junior
+tags: [display, layout, inline]
+answer: "block chiếm nguyên dòng và nhận width/height/margin đầy đủ. inline nằm trong dòng chữ, bỏ qua width/height và margin dọc. inline-block nằm trong dòng như inline nhưng vẫn nhận width, height, margin và padding như block."
+---
+| Thuộc tính | block | inline | inline-block |
+|---|---|---|---|
+| Xuống dòng mới | Có | Không | Không |
+| `width`/`height` | Có | Bỏ qua | Có |
+| Margin/padding dọc | Có | Không ảnh hưởng layout | Có |
+| Ví dụ mặc định | `div`, `p` | `span`, `a` | `button`, `img` (gần giống) |
+
+```css
+.tag { display: inline-block; width: 80px; padding: 4px 8px; }
+```
+
+<Callout type="pitfall">
+Giữa các phần tử `inline-block` có khoảng trắng nhỏ do ký tự whitespace trong HTML. Hiện nay thường dùng flex thay vì cố xử lý khoảng trống này.
+</Callout>
+
+<Callout type="tip">
+`display: none` loại phần tử khỏi layout và cây accessibility; `visibility: hidden` vẫn giữ chỗ.
+</Callout>

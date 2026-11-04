@@ -1,0 +1,32 @@
+---
+title: "Chọn state management: useState, Context, Redux, Zustand, React Query?"
+topic: react
+roles: [frontend, fullstack]
+level: senior
+tags: [state-management, redux, zustand, react-query]
+answer: "Phân loại state trước: UI cục bộ dùng useState; server state (cache, refetch, đồng bộ) dùng React Query/SWR; client state toàn cục dùng Zustand (gọn) hoặc Redux Toolkit (app lớn, cần devtools, quy ước chặt). Context hợp cho giá trị ít đổi như theme."
+---
+| Loại state | Công cụ | Lý do |
+|---|---|---|
+| Cục bộ (input, modal) | `useState`/`useReducer` | Đơn giản nhất |
+| Server state | React Query, SWR, RTK Query | Cache, dedupe, refetch, retry, stale-while-revalidate |
+| Global client state | Zustand, Jotai | Ít boilerplate, có selector |
+| Global phức tạp, team lớn | Redux Toolkit | Luồng một chiều, devtools time-travel, middleware |
+| Giá trị ít đổi (theme, locale, user) | Context | Không thêm thư viện |
+| State trong URL | Router search params | Chia sẻ link, back/forward |
+
+```jsx
+const useCart = create(set => ({
+  items: [],
+  add: item => set(s => ({ items: [...s.items, item] })),
+}));
+const count = useCart(s => s.items.length); // chỉ re-render khi count đổi
+```
+
+<Callout type="pitfall">
+Sai lầm phổ biến: nhét dữ liệu từ API vào Redux rồi tự viết loading/error/refetch. Phần lớn "global state" thực ra là server state; để React Query lo thì store còn lại rất nhỏ.
+</Callout>
+
+<Callout type="followup">
+Cân nhắc kích thước team, nhu cầu debug/devtools, SSR và độ phức tạp của luồng cập nhật, chứ không phải xu hướng.
+</Callout>

@@ -1,0 +1,23 @@
+---
+title: "Container khác máy ảo (VM) ở điểm nào?"
+topic: docker
+roles: [backend, fullstack, devops]
+level: junior
+tags: [container, vm, isolation, namespace, cgroup]
+answer: "VM ảo hoá phần cứng với guest OS riêng chạy trên hypervisor; container chia sẻ kernel của host và chỉ cô lập tiến trình bằng namespace, giới hạn tài nguyên bằng cgroup. Container nhẹ, khởi động nhanh nhưng cô lập yếu hơn VM."
+---
+| | Container | VM |
+|---|---|---|
+| Kernel | dùng chung với host | mỗi VM một kernel |
+| Kích thước | MB | GB |
+| Khởi động | giây hoặc nhanh hơn | phút |
+| Cô lập | tiến trình (namespace, cgroup) | phần cứng ảo hoá |
+| Mật độ trên một máy | cao | thấp hơn |
+
+- **namespace**: cô lập PID, network, mount, user, hostname.
+- **cgroup**: giới hạn CPU, RAM, I/O.
+- Container Linux cần kernel Linux; trên macOS/Windows Docker Desktop chạy trong một VM Linux nhẹ.
+
+<Callout type="tip">
+Khi cần cô lập mạnh (multi-tenant không tin cậy) có thể kết hợp: chạy container trong VM hoặc dùng microVM như Firecracker, gVisor.
+</Callout>

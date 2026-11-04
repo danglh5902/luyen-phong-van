@@ -1,0 +1,45 @@
+---
+title: "Bạn dẫn dắt team thế nào khi có sự cố production (incident)?"
+titleEn: "How do you lead the team during a production incident?"
+topic: soft-skills
+roles: [frontend, backend, fullstack, devops]
+level: senior
+tags: [incident, leadership, production, postmortem]
+answer: "Giữ bình tĩnh, ưu tiên khôi phục dịch vụ trước rồi mới tìm nguyên nhân gốc. Phân vai rõ, một người lo giao tiếp, cập nhật đều cho mọi người. Sau đó viết postmortem không đổ lỗi và làm các việc ngăn tái diễn."
+answerEn: "I stay calm and fix the service first, then find the root cause. I give clear roles, and one person shares updates often. After that, we write a postmortem with no blame and do actions to stop it from happening again."
+---
+## Nhà tuyển dụng muốn biết gì
+- Bạn bình tĩnh và có quy trình khi áp lực cao.
+- Bạn biết phân vai và giao tiếp rõ với team lẫn người ngoài team.
+- Bạn học từ sự cố, không đổ lỗi cá nhân.
+
+## Cách trả lời
+1. Situation: sự cố gì, ảnh hưởng ai.
+2. Task: vai trò của bạn (incident lead).
+3. Action: khôi phục trước (rollback), phân vai, cập nhật định kỳ, rồi tìm nguyên nhân gốc.
+4. Result: thời gian khôi phục, postmortem không đổ lỗi, việc phòng ngừa đã làm.
+
+## Câu trả lời mẫu (English)
+> Last year on [tên dự án], our payment service went down at night. I was the incident lead. First, I told the team to roll back the last release. The service came back in [số] minutes.
+>
+> I gave clear roles. One person looked at the logs, and one person wrote updates for support and managers every [15] minutes. I asked everyone to stay calm and share what they saw.
+>
+> After that, we found the root cause: a missing database index. We wrote a postmortem with no blame. We added an alert and a check before release. The same problem has not come back since then.
+
+## Từ vựng hay dùng
+| English | Nghĩa tiếng Việt |
+|---|---|
+| incident | sự cố |
+| roll back | quay lại bản cũ |
+| root cause | nguyên nhân gốc |
+| update | cập nhật tình hình |
+| postmortem | báo cáo sau sự cố |
+| no blame | không đổ lỗi |
+
+<Callout type="pitfall">
+Đừng bắt đầu bằng "ai làm hỏng?". Đổ lỗi làm mọi người giấu thông tin, và sự cố sau sẽ khó xử lý hơn.
+</Callout>
+
+<Callout type="tip">
+Nếu chưa từng làm incident lead, hãy kể vai trò thật của bạn và điều bạn sẽ làm khi dẫn dắt. Đừng bịa.
+</Callout>

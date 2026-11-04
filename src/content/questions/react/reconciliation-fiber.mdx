@@ -1,0 +1,34 @@
+---
+title: "Reconciliation và Fiber trong React hoạt động thế nào?"
+topic: react
+roles: [frontend, fullstack]
+level: senior
+tags: [reconciliation, fiber, internals]
+answer: "Reconciliation so sánh cây element mới với cây cũ để tính phần DOM cần đổi, dựa trên 2 heuristic: khác type thì remount, cùng vị trí/key thì update. Fiber là cấu trúc dữ liệu cho phép chia render thành các đơn vị nhỏ, tạm dừng và ưu tiên được."
+---
+Hai heuristic giúp diff chạy O(n) thay vì O(n³):
+
+- Element khác `type` ở cùng vị trí: unmount cây con cũ, mount cây mới (mất state).
+- Cùng `type`: giữ instance, chỉ cập nhật props; với list thì dùng `key` để khớp phần tử.
+
+Fiber là một node trong cây làm việc (linked list với `child`, `sibling`, `return`) đại diện cho một component. React giữ hai cây: `current` (đang hiển thị) và `workInProgress` (đang tính), rồi hoán đổi khi commit.
+
+| Pha | Đặc điểm |
+|---|---|
+| Render | Gọi component, diff, tính effect. Thuần, có thể bị ngắt/bỏ/chạy lại |
+| Commit | Cập nhật DOM, chạy layout effect. Đồng bộ, không ngắt được |
+
+```jsx
+function App({ admin }) {
+  // Đổi admin: type đổi -> toàn bộ cây Form bị remount, mất state
+  return admin ? <AdminForm /> : <UserForm />;
+}
+```
+
+<Callout type="pitfall">
+Khai báo component bên trong component khác tạo ra `type` mới mỗi lần render, khiến cây con remount liên tục. Luôn định nghĩa component ở cấp module.
+</Callout>
+
+<Callout type="followup">
+Vì render phase có thể chạy lại, render phải thuần (không side effect). Đó là lý do StrictMode gọi render hai lần ở dev.
+</Callout>

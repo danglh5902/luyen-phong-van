@@ -1,0 +1,25 @@
+---
+title: "CDN hoạt động thế nào và khi nào nên dùng?"
+topic: system-design
+roles: [backend, fullstack, frontend, devops]
+level: junior
+tags: [cdn, caching, edge, latency]
+answer: "CDN là mạng máy chủ edge đặt gần người dùng, cache nội dung tĩnh (ảnh, JS, CSS, video) để giảm latency và tải cho origin. Khi cache miss, edge lấy từ origin rồi lưu theo TTL/Cache-Control. Có thể mở rộng cho nội dung động, chống DDoS, TLS."
+---
+```text
+User -> Edge (gần nhất) --hit--> trả ngay
+                        --miss-> Origin -> lưu cache -> trả
+```
+
+```text
+Cache-Control: public, max-age=31536000, immutable   # file có hash trong tên
+Cache-Control: no-cache                              # luôn revalidate (ETag)
+```
+
+- **Invalidation**: purge theo URL, hoặc tránh hẳn bằng versioned/hashed filename (`app.3f9a.js`).
+- **Pull CDN** lấy từ origin khi cần; **push CDN** upload trước.
+- Thêm lợi ích: nén (gzip/brotli), HTTP/2-3, chống DDoS, ẩn IP origin.
+
+<Callout type="pitfall">
+Không cache response có dữ liệu riêng từng người dùng: kiểm tra `Vary`, `Set-Cookie` và `Cache-Control: private` để tránh lộ dữ liệu người này cho người khác.
+</Callout>

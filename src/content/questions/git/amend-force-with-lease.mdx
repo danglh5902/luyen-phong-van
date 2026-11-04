@@ -1,0 +1,25 @@
+---
+title: "git commit --amend và vì sao nên dùng --force-with-lease"
+topic: git
+roles: [backend, fullstack, devops, frontend]
+level: senior
+tags: [amend, force-push, force-with-lease, history]
+answer: "commit --amend thay commit cuối bằng commit mới (đổi message hoặc thêm file) nên hash đổi. Nếu đã push, phải force push. --force-with-lease chỉ ghi đè khi remote vẫn đúng như bạn lần cuối thấy, tránh vô tình xoá commit của đồng nghiệp như --force."
+---
+```bash
+git add forgotten.js
+git commit --amend --no-edit        # thêm file vào commit cuối
+git commit --amend -m "fix: correct typo"
+
+git push --force-with-lease                                  # an toàn hơn --force
+git push --force-with-lease=feature:abc123 origin feature    # ghim hash kỳ vọng
+```
+
+| | `--force` | `--force-with-lease` |
+|---|---|---|
+| Ghi đè vô điều kiện | Có | Không |
+| Từ chối nếu remote có commit mới bạn chưa fetch | Không | Có |
+
+<Callout type="pitfall">
+Nếu IDE hoặc tác vụ nền tự `git fetch`, "lease" bị cập nhật và có thể vẫn ghi đè commit người khác mà bạn chưa xem. Hãy kiểm tra `git log origin/<nhánh>` hoặc ghim hash như ví dụ trên. Không amend/force push nhánh dùng chung như `main`.
+</Callout>

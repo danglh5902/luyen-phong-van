@@ -1,0 +1,30 @@
+---
+title: "Giới hạn CPU và memory cho container, OOMKilled là gì?"
+topic: docker
+roles: [backend, devops]
+level: senior
+tags: [cgroup, memory, cpu, oom, limits]
+answer: "Giới hạn qua cgroup: --memory đặt trần RAM (vượt thì kernel OOM kill, exit 137), --cpus hoặc --cpu-shares giới hạn CPU. Memory là giới hạn cứng, CPU bị throttle chứ không kill. Runtime như JVM, Node cần cấu hình nhận biết limit của container."
+---
+```bash
+docker run -d --memory=512m --memory-swap=512m --cpus=1.5 myapp
+docker inspect -f '{{.State.OOMKilled}}' myapp   # true nếu bị OOM kill
+docker stats
+```
+
+```yaml
+services:
+  api:
+    deploy:
+      resources:
+        limits:   { cpus: "1.5", memory: 512M }
+        reservations: { memory: 256M }
+```
+
+- `--memory-swap` bằng `--memory` nghĩa là không dùng swap.
+- CPU vượt quota bị throttle làm tăng latency mà không có lỗi rõ ràng.
+- JVM cũ (trước 10 và 8u191) không nhận cgroup limit, heap tính theo RAM host; Node nên đặt `--max-old-space-size` dưới limit.
+
+<Callout type="pitfall">
+Không đặt limit thì một container rò rỉ bộ nhớ có thể làm OOM cả host. Trên Kubernetes, `requests` dùng để lập lịch còn `limits` mới là trần thực thi.
+</Callout>

@@ -1,0 +1,33 @@
+---
+title: "Phân biệt SSG, SSR, ISR trong App Router; điều gì khiến một route thành dynamic?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: mid
+tags: [ssr, ssg, isr, dynamic-rendering, cookies, headers]
+answer: "Route mặc định static (render lúc build, SSG). Dùng cookies(), headers(), searchParams, fetch no-store hoặc export const dynamic = 'force-dynamic' thì thành dynamic (SSR mỗi request). ISR là static có revalidate (export const revalidate hoặc fetch next.revalidate) để tái tạo nền theo thời gian/tag."
+---
+| Chiến lược | Cách bật trong App Router | Khi render |
+|---|---|---|
+| SSG | mặc định, không dùng API dynamic | lúc build |
+| ISR | `export const revalidate = 60` hoặc `fetch(url, { next: { revalidate: 60 } })` | build, rồi tái tạo nền sau khi hết hạn (stale-while-revalidate) |
+| SSR | dùng Dynamic API hoặc `dynamic = 'force-dynamic'` | mỗi request |
+
+Dynamic API gồm `cookies()`, `headers()`, `draftMode()`, `searchParams` của page, và `connection()`. Dynamic route có param chưa biết trước dùng `generateStaticParams` để prerender trước.
+
+```tsx
+import { cookies } from "next/headers";
+
+export default async function Page() {
+  // Next 15: cookies() là async; Next 14: đồng bộ
+  const theme = (await cookies()).get("theme")?.value;
+  return <p>Theme: {theme}</p>; // dùng cookies() => route là dynamic
+}
+```
+
+<Callout type="pitfall">
+Chỉ cần một `cookies()` ở bất kỳ Server Component nào trong cây là cả route chuyển sang dynamic (nếu không bọc `Suspense` với PPR). Next 14: `fetch` mặc định `force-cache`; Next 15: mặc định không cache, nên nhiều route từng static ở 14 trở nên dynamic khi nâng cấp.
+</Callout>
+
+<Callout type="followup">
+`params` và `searchParams` trở thành Promise ở Next 15. Làm sao ép route static mà vẫn cá nhân hóa một phần? Dùng PPR hoặc đọc cookie ở Client Component.
+</Callout>

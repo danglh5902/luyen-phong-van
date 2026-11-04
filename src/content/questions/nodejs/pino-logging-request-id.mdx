@@ -1,0 +1,35 @@
+---
+title: "Structured logging với pino và gắn request id xuyên suốt"
+topic: nodejs
+roles: [backend, fullstack]
+level: mid
+tags: [pino, logging, observability, request-id]
+answer: "Log dạng JSON có cấu trúc (pino) để máy parse được; mỗi request gắn một request id (lấy từ header x-request-id hoặc sinh mới) và đưa vào child logger. Nhờ vậy truy vết mọi dòng log của một request qua nhiều service. Không log secret, dùng redact."
+---
+pino nhanh vì ghi JSON với chi phí tối thiểu và đẩy việc format đẹp (pino-pretty) ra ngoài process.
+
+```js
+const pino = require('pino');
+const { randomUUID } = require('node:crypto');
+
+const logger = pino({
+  level: process.env.LOG_LEVEL || 'info',
+  redact: ['req.headers.authorization', 'password'],
+});
+
+app.use((req, res, next) => {
+  req.id = req.headers['x-request-id'] || randomUUID();
+  res.setHeader('x-request-id', req.id);
+  req.log = logger.child({ reqId: req.id });
+  next();
+});
+app.get('/', (req, res) => { req.log.info({ route: '/' }, 'handled'); res.end(); });
+```
+
+- Dùng level hợp lý: `error`, `warn`, `info`, `debug`.
+- Ghi ra stdout, để hạ tầng (Docker, Fluent Bit) thu thập theo 12-factor.
+- Propagate id sang service khác bằng header; kết hợp `AsyncLocalStorage` để khỏi truyền `req.log` thủ công.
+
+<Callout type="pitfall">
+`console.log` chuỗi tự do rất khó query. Log cả object user hoặc header sẽ lộ token; dùng `redact`.
+</Callout>

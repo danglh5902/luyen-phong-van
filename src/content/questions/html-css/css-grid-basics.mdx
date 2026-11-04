@@ -1,0 +1,29 @@
+---
+title: "CSS Grid: `fr`, `minmax()` và `auto-fit` dùng thế nào để làm layout responsive?"
+topic: html-css
+roles: [frontend, fullstack]
+level: mid
+tags: [grid, responsive, minmax]
+answer: "fr chia phần không gian còn lại theo tỉ lệ. minmax(min, max) đặt biên kích thước track. repeat(auto-fit, minmax(220px, 1fr)) tạo số cột tự động theo bề rộng container mà không cần media query; auto-fit gộp track rỗng còn auto-fill thì giữ."
+---
+```css
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-areas: "side main";
+}
+```
+
+- `1fr` chia phần dư sau khi trừ track cố định và gap.
+- `auto-fit`: track rỗng bị thu về 0 nên item giãn ra lấp chỗ; `auto-fill`: giữ track rỗng, item không giãn.
+- `1fr` có `min-width: auto` ngầm, nên dùng `minmax(0, 1fr)` để chống tràn nội dung dài.
+
+<Callout type="tip">
+`subgrid` cho phép grid con dùng lại track của grid cha, hữu ích để căn đều các phần trong các card cạnh nhau.
+</Callout>

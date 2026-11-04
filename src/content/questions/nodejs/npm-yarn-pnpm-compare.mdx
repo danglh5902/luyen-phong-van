@@ -1,0 +1,25 @@
+---
+title: "So sánh npm, Yarn và pnpm"
+topic: nodejs
+roles: [backend, fullstack]
+level: junior
+tags: [npm, yarn, pnpm, package-manager]
+answer: "Cả ba cài package từ registry npm. pnpm dùng content-addressable store và hard link nên nhanh, tiết kiệm đĩa và chặn phantom dependency nhờ node_modules nghiêm ngặt. Yarn Berry có Plug'n'Play và workspaces. npm là mặc định đi kèm Node."
+---
+| | npm | Yarn | pnpm |
+|---|---|---|---|
+| Lockfile | `package-lock.json` | `yarn.lock` | `pnpm-lock.yaml` |
+| Lưu trữ | Copy vào từng project | Copy hoặc PnP (Berry) | Store chung toàn máy + hard link |
+| `node_modules` | Phẳng (hoisted) | Phẳng hoặc không có (PnP) | Cấu trúc symlink, không hoist mặc định |
+| Monorepo | `workspaces` | `workspaces` | `pnpm-workspace.yaml`, rất mạnh |
+| CI | `npm ci` | `yarn install --immutable` | `pnpm install --frozen-lockfile` |
+
+Phantom dependency: với node_modules phẳng, code có thể `require` được package không khai báo trong `package.json` (do bị hoist), rồi hỏng khi cấu trúc cây thay đổi. pnpm ngăn điều này.
+
+<Callout type="tip">
+Dự án monorepo hoặc nhiều project trên một máy: pnpm thường tiết kiệm đĩa và thời gian cài đáng kể. Dùng trường `packageManager` (Corepack) để cả team dùng cùng một phiên bản.
+</Callout>
+
+<Callout type="followup">
+Làm sao kiểm soát supply-chain risk khi cài package? (lockfile, `npm audit`, tắt lifecycle scripts, pin version.)
+</Callout>

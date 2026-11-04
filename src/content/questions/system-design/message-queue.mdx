@@ -1,0 +1,16 @@
+---
+title: "Message queue dùng để làm gì? Khi nào nên dùng?"
+topic: system-design
+roles: [backend, devops]
+level: mid
+tags: [queue, async, kafka]
+answer: "Queue tách producer và consumer: xử lý bất đồng bộ, chịu tải đột biến (buffer), retry khi lỗi và scale consumer độc lập. Đổi lại hệ thống phức tạp hơn và dữ liệu eventual consistent."
+---
+```text
+API  ──(đơn hàng)──▶ [ Queue ] ──▶ Worker gửi email
+                              └──▶ Worker trừ kho
+```
+
+<Callout type="followup">
+Cần nắm: at-least-once vs exactly-once, idempotent consumer, dead-letter queue, thứ tự message (Kafka partition).
+</Callout>

@@ -1,0 +1,38 @@
+---
+title: "AsyncLocalStorage dùng để làm gì? Truyền context request không cần tham số"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [async_hooks, asynclocalstorage, context, tracing]
+answer: "AsyncLocalStorage (async_hooks) giữ một store gắn với chuỗi thực thi bất đồng bộ, như thread-local của Node. Dùng để mang request id, user, tenant, transaction qua mọi await/callback mà không truyền tham số. Có chi phí nhỏ và store mất nếu bị vỡ context (một số thư viện dùng pool/queue)."
+---
+```js
+const { AsyncLocalStorage } = require('node:async_hooks');
+const als = new AsyncLocalStorage();
+
+app.use((req, res, next) => {
+  als.run({ reqId: req.headers['x-request-id'] ?? crypto.randomUUID() }, next);
+});
+
+// Ở bất kỳ tầng sâu nào, kể cả sau await
+async function repoQuery() {
+  await db.query('select 1');
+  console.log('reqId =', als.getStore()?.reqId);
+}
+```
+
+Use case: logger tự gắn request id, multi-tenancy (tenant id), truyền transaction/unit of work, tracing (OpenTelemetry dùng cơ chế tương tự).
+
+| Điểm cần nhớ | Ghi chú |
+|---|---|
+| `run(store, fn)` | store tồn tại trong `fn` và mọi async con của nó |
+| `enterWith` | Đặt store cho phần còn lại của execution hiện tại; dễ rò context, hạn chế dùng |
+| Mất context | Khi dùng connection pool/queue tự quản lý callback, hoặc thư viện callback cũ; dùng `AsyncResource` để bind |
+
+<Callout type="pitfall">
+Đừng nhét object lớn hay mutable chia sẻ vào store rồi quên ghi chú: nó tồn tại suốt vòng đời async nên có thể giữ bộ nhớ lâu. Test nên chạy trong `als.run` để có context.
+</Callout>
+
+<Callout type="followup">
+So sánh với truyền context tường minh (như `ctx` trong Go): đổi sự rõ ràng lấy sự tiện lợi, và khó test hơn.
+</Callout>

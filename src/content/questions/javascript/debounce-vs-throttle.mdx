@@ -1,0 +1,49 @@
+---
+title: "debounce và throttle khác nhau thế nào? Viết code mỗi loại"
+topic: javascript
+roles: [frontend, fullstack]
+level: mid
+tags: [debounce, throttle, performance, closure]
+answer: "Debounce hoãn gọi hàm cho đến khi ngừng kích hoạt đủ N ms (phù hợp ô tìm kiếm, resize xong). Throttle đảm bảo hàm chạy tối đa một lần mỗi N ms (phù hợp scroll, mousemove). Cả hai đều dựa vào closure giữ timer hoặc timestamp."
+---
+
+## Khác biệt
+
+| | debounce | throttle |
+|---|---|---|
+| Hành vi | chỉ chạy sau khi im lặng N ms | chạy đều đặn, tối đa 1 lần/N ms |
+| Use case | search-as-you-type, autosave | scroll, resize, drag |
+| Reset timer | mỗi lần gọi | không |
+
+## Code
+
+```js
+function debounce(fn, ms) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
+function throttle(fn, ms) {
+  let last = 0;
+  return function (...args) {
+    const now = Date.now();
+    if (now - last >= ms) {
+      last = now;
+      fn.apply(this, args);
+    }
+  };
+}
+```
+
+Bản trên là throttle kiểu leading. Bản đầy đủ thêm trailing call (gọi lần cuối sau khoảng nghỉ) và `cancel()`. Với animation, `requestAnimationFrame` thường thay throttle cho scroll/mousemove.
+
+<Callout type="pitfall">
+Tạo debounce bên trong component render (React) làm mỗi lần render có timer riêng nên không còn debounce. Hãy giữ nó ổn định bằng `useMemo`/`useRef`, và cleanup khi unmount.
+</Callout>
+
+<Callout type="followup">
+Debounce có `leading: true` khác gì? Khi nào cần gọi ngay lần đầu? (Ví dụ chặn double-click submit.)
+</Callout>

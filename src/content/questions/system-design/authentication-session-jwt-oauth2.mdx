@@ -1,0 +1,27 @@
+---
+title: "Xác thực: session, JWT, OAuth2 và SSO khác nhau thế nào?"
+topic: system-design
+roles: [backend, fullstack, frontend]
+level: mid
+tags: [auth, session, jwt, oauth2, sso]
+answer: "Session lưu trạng thái ở server, client giữ session id trong cookie: dễ thu hồi nhưng cần kho chia sẻ. JWT là token tự chứa đã ký, server không lưu trạng thái nhưng khó thu hồi. OAuth2 là giao thức uỷ quyền truy cập; OpenID Connect thêm xác thực danh tính, nền tảng của SSO."
+---
+| | Session | JWT |
+|---|---|---|
+| Trạng thái | server (Redis/DB) | trong token |
+| Thu hồi | xoá session | khó: chờ hết hạn hoặc blocklist |
+| Scale | cần store chung | stateless |
+| Rủi ro | CSRF nếu dùng cookie | lộ token, lưu ở localStorage dễ bị XSS |
+
+```text
+Authorization Code + PKCE:
+App -> redirect IdP login -> IdP trả code -> App đổi code lấy access_token (+ id_token)
+```
+
+- Access token sống ngắn (vài phút), refresh token dài hơn và xoay vòng (rotation).
+- Cookie `HttpOnly; Secure; SameSite` an toàn hơn localStorage cho token trình duyệt.
+- SSO: một IdP (Okta, Keycloak, Google) xác thực một lần cho nhiều ứng dụng (OIDC hoặc SAML).
+
+<Callout type="pitfall">
+JWT không mã hoá mặc định, chỉ ký: đừng đặt dữ liệu nhạy cảm vào payload. Luôn kiểm tra chữ ký, `exp`, `aud`, `iss` và cố định thuật toán.
+</Callout>

@@ -1,0 +1,28 @@
+---
+title: "Class component và function component khác nhau thế nào? Lifecycle tương ứng với hooks ra sao?"
+topic: react
+roles: [frontend, fullstack]
+level: junior
+tags: [class-component, hooks, lifecycle]
+answer: "Function component dùng hooks, ngắn gọn và dễ tái sử dụng logic; class dùng `this` và lifecycle method. `componentDidMount/DidUpdate/WillUnmount` đều quy về `useEffect` (cleanup tương ứng unmount). Class vẫn cần cho Error Boundary."
+---
+| Class | Function + hooks |
+|---|---|
+| `this.state`, `setState` | `useState`, `useReducer` |
+| `componentDidMount` | `useEffect(fn, [])` |
+| `componentDidUpdate` | `useEffect(fn, [dep])` |
+| `componentWillUnmount` | hàm cleanup trả về từ `useEffect` |
+| `shouldComponentUpdate` | `React.memo` |
+
+```jsx
+useEffect(() => {
+  const id = setInterval(tick, 1000);
+  return () => clearInterval(id); // unmount hoặc trước effect kế tiếp
+}, []);
+```
+
+Khác biệt tư duy: effect là "đồng bộ với dữ liệu" (theo dependency) chứ không phải "chạy ở thời điểm vòng đời". Function component cũng "bắt" giá trị props/state của từng lần render, còn `this.props` trong class luôn là giá trị mới nhất.
+
+<Callout type="pitfall">
+Chưa có hook tương đương `componentDidCatch`/`getDerivedStateFromError`; Error Boundary vẫn phải là class (hoặc dùng thư viện `react-error-boundary`).
+</Callout>

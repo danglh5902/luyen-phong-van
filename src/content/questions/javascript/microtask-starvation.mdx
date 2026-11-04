@@ -1,0 +1,41 @@
+---
+title: "Microtask starvation là gì? Làm sao tránh chặn event loop?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [event-loop, microtask, performance, starvation]
+answer: "Event loop chạy hết toàn bộ microtask queue (kể cả microtask mới sinh ra) trước khi sang macrotask hay render. Nếu microtask liên tục tự lên lịch microtask khác, timer, I/O và render bị bỏ đói (starvation) và trang đứng. Tránh bằng cách nhường quyền qua macrotask (`setTimeout`, `MessageChannel`, `scheduler.yield`)."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`let n = 0;
+function loop() {
+  if (++n < 1000) Promise.resolve().then(loop); // microtask tự nối tiếp
+}
+setTimeout(() => console.log("timeout chạy sau, n =", n), 0);
+loop();
+console.log("sync xong");`} />
+
+Timer có hạn 0ms vẫn phải chờ 1000 microtask xong. Nếu điều kiện dừng không bao giờ đúng, vòng lặp là vô hạn và tab đóng băng, vì microtask queue không bao giờ cạn.
+
+## So với macrotask
+
+- Sau mỗi macrotask, engine drain toàn bộ microtask, rồi mới có thể render và lấy macrotask tiếp theo.
+- Đệ quy bằng `setTimeout(loop)` thì ổn: giữa các vòng trình duyệt vẫn render và xử lý input.
+- `queueMicrotask` và `Promise.then` cùng queue; `await` trên promise đã resolve cũng là microtask.
+
+## Cách tránh
+
+- Chia việc nặng thành các lô nhỏ, nhường quyền giữa các lô bằng macrotask (`setTimeout`, `MessageChannel`) hoặc `scheduler.yield()` ở trình duyệt hỗ trợ; Node dùng `setImmediate`.
+- Với tác vụ CPU thật sự nặng, chuyển sang Web Worker/`worker_threads`.
+- `requestIdleCallback` cho việc không gấp.
+
+<Callout type="pitfall">
+Vòng `while` đồng bộ cũng chặn event loop như vậy; đừng nghĩ `async` biến code CPU-bound thành không chặn. Chỉ I/O mới thật sự bất đồng bộ.
+</Callout>
+
+<Callout type="followup">
+Trong Node.js, `process.nextTick` có thể gây starvation I/O theo cách tương tự (ưu tiên cao hơn cả microtask của Promise).
+</Callout>

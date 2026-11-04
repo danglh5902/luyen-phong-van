@@ -1,0 +1,29 @@
+---
+title: "Khác nhau giữa var, let và const?"
+topic: javascript
+roles: [frontend, fullstack, backend]
+level: junior
+tags: [scope, hoisting]
+answer: "var có function scope và bị hoist (giá trị undefined); let/const có block scope và nằm trong Temporal Dead Zone trước khi khai báo; const không cho gán lại biến."
+---
+import Runnable from "../../../components/Runnable";
+
+| | var | let | const |
+|---|---|---|---|
+| Scope | function | block | block |
+| Gán lại | ✅ | ✅ | ❌ |
+| Hoisting | `undefined` | TDZ (lỗi) | TDZ (lỗi) |
+
+<Runnable client:visible lang="js" code={`console.log(a); // undefined (hoisted)
+var a = 1;
+
+try { console.log(b); } catch (e) { console.log(e.name); } // ReferenceError
+let b = 2;
+
+const obj = { x: 1 };
+obj.x = 2;           // OK: đổi nội dung object
+console.log(obj);`} />
+
+<Callout type="tip">
+`const` chỉ cố định **tham chiếu**, không làm object bất biến. Muốn bất biến dùng `Object.freeze`.
+</Callout>

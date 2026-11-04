@@ -1,0 +1,22 @@
+---
+title: "useEffect chạy khi nào? Mảng dependency để làm gì?"
+topic: react
+roles: [frontend, fullstack]
+level: junior
+tags: [hooks, useEffect]
+answer: "useEffect chạy sau khi render. Mảng deps quyết định khi nào chạy lại: không có deps = mỗi render, [] = chỉ lần mount, [a] = khi a đổi. Hàm return dùng để cleanup."
+---
+```jsx
+useEffect(() => {
+  const id = setInterval(() => setSec((s) => s + 1), 1000);
+  return () => clearInterval(id); // cleanup khi unmount / trước lần chạy kế
+}, []); // chạy 1 lần
+```
+
+<Callout type="pitfall">
+Quên cleanup (timer, listener, subscription) gây memory leak. Dùng `setSec(s => s + 1)` thay vì `setSec(sec + 1)` để tránh stale closure khi deps rỗng.
+</Callout>
+
+<Callout type="followup">
+Vì sao Strict Mode ở dev chạy effect 2 lần? Để phát hiện effect thiếu cleanup.
+</Callout>

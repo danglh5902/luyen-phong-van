@@ -1,0 +1,33 @@
+---
+title: "Race condition khi fetch trong useEffect và cách xử lý bằng AbortController?"
+topic: react
+roles: [frontend, fullstack]
+level: senior
+tags: [useeffect, data-fetching, abortcontroller]
+answer: "Khi dependency đổi nhanh, response cũ có thể về sau response mới và ghi đè state sai. Cách xử lý: cleanup của effect gọi `controller.abort()` (hoặc cờ `ignore`), bỏ qua `AbortError`. Tốt hơn nữa là dùng thư viện (TanStack Query/SWR) hoặc Suspense."
+---
+```jsx
+useEffect(() => {
+  const controller = new AbortController();
+  setLoading(true);
+  fetch(`/api/user/${id}`, { signal: controller.signal })
+    .then((r) => r.json())
+    .then(setUser)
+    .catch((e) => { if (e.name !== "AbortError") setError(e); })
+    .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+  return () => controller.abort(); // id đổi hoặc unmount
+}, [id]);
+```
+
+- `abort()` hủy request thật (tiết kiệm băng thông); cờ `let ignore = true` chỉ bỏ qua kết quả.
+- Cleanup chạy trước effect kế tiếp nên mỗi lần chỉ response của lần mới nhất được dùng.
+- Với search-as-you-type nên debounce và/hoặc `useDeferredValue`.
+- StrictMode (dev) mount, unmount, mount lại effect: request đầu bị abort, đó là hành vi đúng, không phải bug.
+
+<Callout type="pitfall">
+Abort không đảm bảo server ngừng xử lý. Với thao tác ghi (POST) đừng dựa vào abort để hủy; cần idempotency key.
+</Callout>
+
+<Callout type="tip">
+React 19: `use(promise)` trong Suspense, và promise phải được tạo ở nơi ổn định (cache/loader), không tạo mới mỗi lần render.
+</Callout>

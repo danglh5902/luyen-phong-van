@@ -1,0 +1,29 @@
+---
+title: "TanStack Query: staleTime, gcTime, invalidate và vì sao khác tự gọi fetch trong useEffect?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [react-query, data-fetching, cache]
+answer: "TanStack Query quản lý server state: cache theo `queryKey`, dedupe request, retry, refetch nền. `staleTime` là thời gian dữ liệu coi là tươi (mặc định 0); `gcTime` (v5; trước là cacheTime, mặc định 5 phút) là thời gian giữ cache khi không còn observer. Sau mutation dùng `invalidateQueries`."
+---
+```tsx
+const { data, isPending } = useQuery({
+  queryKey: ["todos", filter],      // đổi key = query mới
+  queryFn: () => api.getTodos(filter),
+  staleTime: 60_000,                // 1 phút không refetch
+});
+
+const qc = useQueryClient();
+const m = useMutation({
+  mutationFn: api.addTodo,
+  onSuccess: () => qc.invalidateQueries({ queryKey: ["todos"] }),
+});
+```
+
+- Dữ liệu stale vẫn được hiển thị ngay từ cache, đồng thời refetch nền (stale-while-revalidate) khi mount, focus lại cửa sổ, reconnect.
+- `isPending` (v5, trước là `isLoading`) là chưa có data; `isFetching` là đang tải bất kỳ lúc nào.
+- Optimistic update: `onMutate` cập nhật cache, `onError` rollback.
+
+<Callout type="pitfall">
+`queryKey` phải chứa mọi biến `queryFn` dùng, nếu không cache sẽ sai. Đừng copy server state vào `useState`.
+</Callout>

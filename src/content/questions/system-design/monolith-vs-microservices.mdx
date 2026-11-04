@@ -1,0 +1,28 @@
+---
+title: "Monolith hay microservices: đánh đổi là gì?"
+topic: system-design
+roles: [backend, fullstack, devops]
+level: mid
+tags: [monolith, microservices, architecture, api-gateway]
+answer: "Monolith là một khối deploy: đơn giản, dễ debug, giao dịch cục bộ nhưng khó scale từng phần và dễ rối khi lớn. Microservices tách theo bounded context, deploy và scale độc lập, nhưng thêm độ phức tạp mạng, dữ liệu phân tán, observability. Nên bắt đầu monolith module hoá."
+---
+| | Monolith | Microservices |
+|---|---|---|
+| Deploy | một lần | độc lập từng service |
+| Scale | cả khối | từng service |
+| Giao dịch | ACID cục bộ | saga, eventual consistency |
+| Gọi nhau | function call | network (latency, lỗi một phần) |
+| Vận hành | đơn giản | cần CI/CD, tracing, service discovery |
+| Phù hợp | team nhỏ, sản phẩm đầu | nhiều team, miền rõ ràng |
+
+```text
+Client -> API Gateway -> [Order] [Payment] [Inventory]
+                          (mỗi service một database riêng)
+```
+
+- API gateway làm cửa vào duy nhất: routing, auth, rate limit, aggregation.
+- Anti-pattern: distributed monolith, các service chia sẻ chung một DB hoặc phải deploy cùng nhau.
+
+<Callout type="followup">
+Hỏi tiếp: chia ranh giới service thế nào (DDD bounded context)? Xử lý transaction xuyên service ra sao?
+</Callout>

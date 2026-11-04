@@ -1,0 +1,135 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import LevelBadge from '../../../components/LevelBadge.astro';
+import Progress from '../../../components/Progress';
+import { getCollection } from 'astro:content';
+import { roles, roleMap } from '../../../data/roles';
+import { topicMap } from '../../../data/topics';
+import { levels, goals, tierInfo, buildTrack, trackCount, type Level } from '../../../data/tracks';
+
+export function getStaticPaths() {
+  return roles.flatMap((r) => levels.map((l) => ({ params: { role: r.id, level: l.id } })));
+}
+const { role: roleId, level: levelId } = Astro.params as { role: string; level: Level };
+const role = roleMap[roleId];
+const level = levels.find((l) => l.id === levelId)!;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const all = await getCollection('questions');
+const sections = buildTrack(roleId, levelId, all);
+const total = trackCount(sections);
+const reviewTotal = sections.reduce((n, s) => n + s.review.length, 0);
+const mainIds = sections.flatMap((s) => s.main.map((q) => q.id));
+const hours = Math.max(1, Math.round((total * 4) / 60));
+---
+<BaseLayout title={`${level.name} ${role.name}`}>
+  <nav class="flex items-center gap-2 text-sm text-slate-500" aria-label="Breadcrumb">
+    <a href={`${base}/paths/`} class="hover:underline">Lộ trình</a><span>/</span>
+    <span class="font-medium text-slate-700 dark:text-slate-200">{role.name}</span>
+  </nav>
+
+  <header class="relative mt-4 overflow-hidden rounded-3xl border border-slate-200 p-6 sm:p-8 dark:border-white/10" style={`--accent:${role.color}`}>
+    <div class="absolute inset-0 -z-10 opacity-20" style="background:radial-gradient(520px 240px at 0% 0%, var(--accent), transparent 70%)"></div>
+    <div class="flex flex-wrap items-center gap-5">
+      <div class="tile h-16 w-16 text-3xl">{role.icon}</div>
+      <div class="min-w-0 flex-1">
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{level.name} {role.name}</h1>
+        <p class="mt-1 text-slate-500">{level.sub}</p>
+      </div>
+      <a href={`${base}/paths/${roleId}/${levelId}/flashcards/`} class="rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white shadow-lg hover:opacity-90">🃏 Flashcard cả lộ trình</a>
+    </div>
+
+    <div class="seg mt-6" role="tablist" aria-label="Chọn cấp độ">
+      {levels.map((l) => (
+        <a href={`${base}/paths/${roleId}/${l.id}/`} aria-pressed={String(l.id === levelId)}
+          class="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 transition hover:text-slate-900 aria-pressed:bg-slate-900 aria-pressed:text-white aria-pressed:shadow dark:hover:text-white dark:aria-pressed:bg-white dark:aria-pressed:text-slate-900">{l.name}</a>
+      ))}
+    </div>
+
+    <div class="mt-6 flex flex-wrap gap-2">
+      <span class="chip">📚 {total} câu cần học</span>
+      {reviewTotal > 0 && <span class="chip">🔁 {reviewTotal} câu ôn nhanh</span>}
+      <span class="chip">⏱ ~{hours} giờ</span>
+      <span class="chip">🧭 {sections.length} chủ đề</span>
+    </div>
+    <div class="mt-5 max-w-md"><Progress client:load ids={mainIds} label="Tiến độ lộ trình" color={role.color} /></div>
+  </header>
+
+  <section class="card mt-8 p-6" style={`--accent:${role.color}`}>
+    <h2 class="text-lg font-bold text-slate-900 dark:text-white">🎯 Ở level {level.name}, bạn cần ổn những điều này</h2>
+    <ul class="mt-4 grid gap-3 md:grid-cols-2">
+      {goals[roleId][levelId].map((g) => (
+        <li class="flex gap-3 text-sm leading-relaxed">
+          <span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--accent)] text-[11px] font-bold text-white">✓</span>
+          <span>{g}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <div class="mt-10 space-y-8">
+    {sections.map((s, i) => {
+      const t = topicMap[s.topicId];
+      const info = tierInfo[s.tier];
+      return (
+        <section style={`--accent:${t.color}`} class="scroll-mt-24" id={s.topicId}>
+          <div class="mb-3 flex flex-wrap items-center gap-3">
+            <span class="grid h-7 w-7 place-items-center rounded-full bg-slate-900 text-xs font-bold text-white dark:bg-white dark:text-slate-900">{i + 1}</span>
+            <span class="tile h-10 w-10 text-xs">{t.icon}</span>
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">{t.name}</h2>
+            <span class={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${info.cls}`} title={info.hint}>{info.label}</span>
+            <span class="ml-auto text-sm text-slate-500">{s.main.length} câu</span>
+          </div>
+          <div class="mb-3 max-w-md"><Progress client:load ids={s.main.map((q) => q.id)} label="Đã thuộc" color={t.color} /></div>
+
+          <ul class="grid gap-2">
+            {s.main.map((q) => (
+              <li>
+                <a href={`${base}/q/${q.id}/`} data-id={q.id} class="card q-row flex items-center gap-3 px-4 py-3">
+                  <span class="learned-dot grid h-5 w-5 shrink-0 place-items-center rounded-full border border-slate-300 text-[11px] text-transparent dark:border-white/20">✓</span>
+                  <span class="min-w-0 flex-1 text-sm font-medium text-slate-900 dark:text-white">{q.data.title}</span>
+                  <LevelBadge level={q.data.level} />
+                </a>
+              </li>
+            ))}
+          </ul>
+
+          {s.review.length > 0 && (
+            <details class="mt-3 rounded-xl border border-dashed border-slate-300 p-3 dark:border-white/15">
+              <summary class="cursor-pointer text-sm font-medium text-slate-600 dark:text-slate-400">🔁 Ôn nhanh {s.review.length} câu nền tảng (đã học ở level thấp hơn)</summary>
+              <ul class="mt-3 grid gap-2">
+                {s.review.map((q) => (
+                  <li>
+                    <a href={`${base}/q/${q.id}/`} data-id={q.id} class="card q-row flex items-center gap-3 px-4 py-2.5">
+                      <span class="learned-dot grid h-5 w-5 shrink-0 place-items-center rounded-full border border-slate-300 text-[11px] text-transparent dark:border-white/20">✓</span>
+                      <span class="min-w-0 flex-1 text-sm text-slate-700 dark:text-slate-300">{q.data.title}</span>
+                      <LevelBadge level={q.data.level} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </section>
+      );
+    })}
+  </div>
+
+  {sections.length === 0 && <p class="mt-10 text-center text-slate-500">Chưa có nội dung cho lộ trình này.</p>}
+</BaseLayout>
+
+<script>
+  function marks() {
+    let learned: string[] = [];
+    try { learned = JSON.parse(localStorage.getItem('lpv:learned') ?? '[]'); } catch {}
+    document.querySelectorAll<HTMLElement>('.q-row').forEach((row) => {
+      const on = learned.includes(row.dataset.id!);
+      const dot = row.querySelector<HTMLElement>('.learned-dot')!;
+      dot.classList.toggle('bg-emerald-500', on);
+      dot.classList.toggle('border-emerald-500', on);
+      dot.classList.toggle('text-white', on);
+      dot.classList.toggle('text-transparent', !on);
+    });
+  }
+  marks();
+  window.addEventListener('lpv:progress', marks);
+</script>

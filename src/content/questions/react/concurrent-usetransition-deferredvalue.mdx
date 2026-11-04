@@ -1,0 +1,37 @@
+---
+title: "Concurrent rendering: useTransition và useDeferredValue khác nhau thế nào?"
+topic: react
+roles: [frontend, fullstack]
+level: senior
+tags: [concurrent, useTransition, useDeferredValue, react-18]
+answer: "Concurrent rendering cho phép React ngắt render ưu tiên thấp để xử lý tương tác khẩn cấp. useTransition đánh dấu một lần cập nhật state là non-urgent (có isPending); useDeferredValue tạo bản sao trễ của một giá trị khi bạn không kiểm soát được nơi set state."
+---
+```jsx
+function Search() {
+  const [q, setQ] = useState("");
+  const [list, setList] = useState(all);
+  const [isPending, startTransition] = useTransition();
+
+  const onChange = e => {
+    setQ(e.target.value);                          // khẩn cấp: input mượt
+    startTransition(() => setList(filter(all, e.target.value))); // có thể bị ngắt
+  };
+  return <>
+    <input value={q} onChange={onChange} />
+    {isPending && <Spinner />}
+    <Results items={list} />
+  </>;
+}
+```
+
+| | `useTransition` | `useDeferredValue` |
+|---|---|---|
+| Bọc | Hàm set state | Một giá trị |
+| Khi dùng | Bạn nắm code gọi `setState` | Giá trị đến từ props/hook ngoài |
+| Trạng thái chờ | `isPending` | So `value !== deferred` |
+
+Cả hai đều không debounce theo thời gian: React render bản cũ trước, bắt đầu render mới ở nền và bỏ nếu có update mới hơn. Hiệu quả nhất khi phần render nặng (list lớn); không giảm tổng khối lượng tính toán.
+
+<Callout type="pitfall">
+Không bọc state của controlled input trong transition (gây lag gõ phím). Callback của `startTransition` phải đồng bộ; update sau `await` không được tính là transition (React 18).
+</Callout>

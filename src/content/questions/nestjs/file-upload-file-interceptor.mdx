@@ -1,0 +1,41 @@
+---
+title: "Upload file trong NestJS với FileInterceptor và ParseFilePipe"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [upload, multer, fileinterceptor, pipe]
+answer: "FileInterceptor bọc multer: @UseInterceptors(FileInterceptor('file')) rồi lấy @UploadedFile(). Dùng ParseFilePipe với MaxFileSizeValidator và FileTypeValidator để kiểm tra, đặt limits trong options của multer, và dùng stream/S3 cho file lớn thay vì giữ trong memory."
+---
+```ts
+@Post('avatar')
+@UseInterceptors(FileInterceptor('file', {
+  storage: diskStorage({ destination: './uploads' }),
+  limits: { fileSize: 2 * 1024 * 1024 },
+}))
+upload(
+  @UploadedFile(new ParseFilePipe({
+    validators: [
+      new MaxFileSizeValidator({ maxSize: 2 * 1024 * 1024 }),
+      new FileTypeValidator({ fileType: /image\/(png|jpeg)/ }),
+    ],
+  }))
+  file: Express.Multer.File,
+) {
+  return { name: file.filename, size: file.size };
+}
+```
+
+| Interceptor | Dùng khi |
+|---|---|
+| `FileInterceptor` | Một file, một field |
+| `FilesInterceptor` | Nhiều file cùng field |
+| `FileFieldsInterceptor` | Nhiều field khác nhau |
+| `AnyFilesInterceptor` | Bất kỳ field (cẩn thận) |
+
+<Callout type="pitfall">
+`FileTypeValidator` mặc định dựa vào mimetype client gửi nên có thể bị giả; với yêu cầu bảo mật hãy kiểm tra magic bytes. Dùng `fileSize` trong `limits` để multer ngắt sớm, tránh nhận hết file rồi mới từ chối.
+</Callout>
+
+<Callout type="tip">
+Với Fastify adapter không dùng được `FileInterceptor` của multer; cần `@fastify/multipart` hoặc package tương thích.
+</Callout>

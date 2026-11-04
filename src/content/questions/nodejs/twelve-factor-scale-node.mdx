@@ -1,0 +1,38 @@
+---
+title: "Cấu hình 12-factor và scale ứng dụng Node.js (PM2, cluster, stateless)"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [12-factor, scaling, pm2, cluster, stateless, config]
+answer: "12-factor: config qua biến môi trường, log ra stdout, process stateless và disposable (khởi động nhanh, tắt gọn). Để scale, chạy nhiều instance sau load balancer (PM2 cluster mode hoặc container) và đẩy state (session, cache, file) ra Redis/DB/object storage."
+---
+Nguyên tắc chính áp dụng cho Node:
+
+- Config trong env (`process.env.DATABASE_URL`), không commit secret; validate lúc khởi động và fail fast.
+- Log ra stdout/stderr dạng JSON, để platform thu thập; không tự ghi file xoay vòng.
+- Process stateless: không lưu session, upload, cache dùng chung trong RAM/đĩa cục bộ.
+- Disposable: khởi động nhanh, xử lý SIGTERM gọn (graceful shutdown).
+- Dev/prod parity, một codebase nhiều môi trường, build/release/run tách bạch.
+
+```js
+const required = ["DATABASE_URL", "JWT_SECRET"];
+for (const k of required) {
+  if (!process.env[k]) throw new Error("Thiếu biến môi trường " + k);
+}
+```
+
+Cách scale:
+
+| Cách | Ghi chú |
+|---|---|
+| PM2 `-i max` (cluster mode) | Một process mỗi core trên 1 máy, tự restart; không chia sẻ memory |
+| Container + orchestrator | Scale ngang nhiều node, autoscaling, health check |
+| Load balancer (Nginx, ALB) | Phân phối request, có thể bỏ sticky session nếu stateless |
+
+<Callout type="pitfall">
+Rate limit, WebSocket, session trong RAM sẽ sai khi chạy nhiều instance. Dùng Redis (và adapter như Socket.IO Redis adapter) để chia sẻ state giữa các process.
+</Callout>
+
+<Callout type="tip">
+Một Node process chỉ dùng một core cho JS; scale theo chiều ngang trước, tối ưu CPU-bound bằng worker_threads sau.
+</Callout>

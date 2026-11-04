@@ -1,0 +1,38 @@
+---
+title: "Parallel Routes và Intercepting Routes là gì? Làm modal có URL riêng thế nào?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: senior
+tags: [parallel-routes, intercepting-routes, modal, default-tsx]
+answer: "Parallel Routes dùng thư mục @slot để render nhiều page độc lập trong cùng layout (nhận qua props). Intercepting Routes (.)/(..)/(...) chặn điều hướng client tới route khác và hiển thị nó trong ngữ cảnh hiện tại, ghép lại cho pattern modal vẫn có URL chia sẻ được, F5 thì ra trang đầy đủ."
+---
+```
+app/
+  layout.tsx            <- nhận children và modal
+  page.tsx
+  @modal/
+    default.tsx         <- return null
+    (.)photo/[id]/page.tsx   <- bị chặn khi điều hướng client
+  photo/[id]/page.tsx   <- trang đầy đủ (truy cập trực tiếp/reload)
+```
+
+```tsx
+export default function Layout({ children, modal }: {
+  children: React.ReactNode; modal: React.ReactNode;
+}) {
+  return <>{children}{modal}</>;
+}
+```
+
+- Slot (`@modal`) không tạo segment URL.
+- `default.tsx` bắt buộc cho slot không khớp khi hard navigation/reload, nếu thiếu sẽ ra 404.
+- Quy ước chặn tính theo segment route, không theo file system: `(.)` cùng cấp, `(..)` lên một cấp, `(..)(..)` lên hai cấp, `(...)` từ root `app`.
+- Soft navigation (Link) giữ trạng thái slot; hard navigation thì dùng `default.tsx`.
+
+<Callout type="pitfall">
+Đóng modal bằng `router.back()` thay vì `router.push('/')` để lịch sử điều hướng đúng. Quên `default.tsx` là nguyên nhân 404 phổ biến sau F5.
+</Callout>
+
+<Callout type="followup">
+Dùng Parallel Routes còn cho dashboard nhiều panel, mỗi slot có `loading.tsx` và `error.tsx` riêng nên lỗi/loading của một panel không kéo cả trang.
+</Callout>

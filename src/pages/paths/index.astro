@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { roles } from '../../data/roles';
+import { levels, buildTrack, trackCount } from '../../data/tracks';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const all = await getCollection('questions');
+const levelColor = { junior: '#10b981', mid: '#f59e0b', senior: '#e11d48' } as const;
+---
+<BaseLayout title="Lộ trình ôn tập">
+  <header class="mb-10 max-w-2xl">
+    <h1 class="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">Lộ trình theo <span class="gradient-text">vị trí và cấp độ</span></h1>
+    <p class="mt-3 text-lg text-slate-600 dark:text-slate-400">
+      Chọn vị trí đang ứng tuyển và cấp độ muốn nhắm tới. Mỗi lộ trình tự chọn ra các chủ đề cần vững
+      (Bắt buộc, Nên biết, Cộng điểm) và đúng độ khó cần ôn.
+    </p>
+  </header>
+
+  <div class="space-y-6">
+    {roles.map((r) => (
+      <section class="card p-5 sm:p-6" style={`--accent:${r.color}`}>
+        <div class="mb-4 flex items-center gap-4">
+          <span class="tile h-12 w-12 text-2xl">{r.icon}</span>
+          <div>
+            <h2 class="text-xl font-bold text-slate-900 dark:text-white">{r.name}</h2>
+            <p class="text-sm text-slate-500">{r.desc}</p>
+          </div>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-3">
+          {levels.map((l) => {
+            const n = trackCount(buildTrack(r.id, l.id, all));
+            return (
+              <a href={`${base}/paths/${r.id}/${l.id}/`} style={`--accent:${levelColor[l.id]}`}
+                class="card group flex flex-col p-4">
+                <span class="flex items-center justify-between">
+                  <span class="font-bold text-slate-900 dark:text-white">{l.name} {r.name}</span>
+                  <span class="text-sm font-semibold text-[var(--accent)] transition group-hover:translate-x-1">→</span>
+                </span>
+                <span class="mt-1 text-xs text-slate-500">{l.sub}</span>
+                <span class="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300">{n} câu · ~{Math.max(1, Math.round((n * 4) / 60))}h ôn</span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    ))}
+  </div>
+</BaseLayout>

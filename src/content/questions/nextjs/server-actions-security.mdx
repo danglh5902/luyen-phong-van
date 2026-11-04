@@ -1,0 +1,41 @@
+---
+title: "Server Actions hoạt động thế nào và cần lưu ý gì về bảo mật?"
+topic: nextjs
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [server-actions, security, revalidatePath, forms]
+answer: "Server Action là hàm async 'use server' mà Next biến thành endpoint POST công khai. Phải coi như API public: validate input (zod), kiểm tra authn/authz trong chính action, không tin dữ liệu client. Sau khi mutate gọi revalidatePath/revalidateTag để làm mới cache."
+---
+```ts
+// app/actions.ts
+"use server";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const Schema = z.object({ title: z.string().min(1).max(100) });
+
+export async function createPost(formData: FormData) {
+  const session = await getSession();
+  if (!session) throw new Error("Unauthorized");
+  const data = Schema.parse({ title: formData.get("title") });
+  await db.post.create({ data: { ...data, authorId: session.userId } });
+  revalidatePath("/posts");
+}
+```
+
+```tsx
+<form action={createPost}><input name="title" /><button>Tạo</button></form>
+```
+
+- Gọi được từ form (hoạt động cả khi chưa hydrate: progressive enhancement) hoặc từ Client Component.
+- Chỉ dùng POST; Next so sánh header `Origin` với `Host` để chống CSRF, có thể cấu hình `serverActions.allowedOrigins`.
+- Biến closure được mã hóa khi gửi xuống client, nhưng đừng dựa vào đó để giữ secret.
+- Mọi hàm export từ file `'use server'` đều là endpoint public, kể cả khi không dùng trong UI.
+
+<Callout type="pitfall">
+`redirect()` hoạt động bằng cách throw, nên đừng đặt nó trong `try/catch` (hoặc phải re-throw). Action chạy tuần tự theo client nên không phù hợp cho data fetching.
+</Callout>
+
+<Callout type="followup">
+Khác gì Route Handler? Server Action gắn với UI và mutation, trả về qua React; Route Handler là HTTP endpoint công khai cho client ngoài (mobile, webhook).
+</Callout>

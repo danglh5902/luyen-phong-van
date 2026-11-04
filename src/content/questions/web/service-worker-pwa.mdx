@@ -1,0 +1,34 @@
+---
+title: "Service Worker và PWA hoạt động thế nào? Các chiến lược cache?"
+topic: web
+roles: [frontend, fullstack]
+level: senior
+tags: [service-worker, pwa, offline, cache-api]
+answer: "Service Worker là script chạy nền tách khỏi trang, đứng giữa trang và mạng để chặn fetch, cache bằng Cache API, hỗ trợ offline, push và background sync. Chỉ chạy trên HTTPS (ngoại trừ localhost). PWA kết hợp Service Worker, web manifest và HTTPS để cài được như app."
+---
+```js
+// sw.js
+self.addEventListener("install", (e) => {
+  e.waitUntil(caches.open("v1").then((c) => c.addAll(["/", "/app.css", "/app.js"])));
+});
+self.addEventListener("fetch", (e) => {
+  e.respondWith(caches.match(e.request).then((hit) => hit || fetch(e.request)));
+});
+// Đăng ký (trong trang): navigator.serviceWorker.register("/sw.js");
+```
+
+| Chiến lược | Dùng cho |
+|---|---|
+| Cache First | Asset tĩnh có hash |
+| Network First | API, HTML cần dữ liệu mới |
+| Stale-While-Revalidate | Nội dung chấp nhận cũ chút, cập nhật nền |
+| Network Only / Cache Only | Request đặc biệt / app shell offline |
+
+- Vòng đời: install, waiting, activate. Worker mới đợi các tab cũ đóng, trừ khi gọi `skipWaiting()` và `clients.claim()`.
+- Worker không truy cập DOM, giao tiếp qua `postMessage`; có thể bị trình duyệt dừng bất cứ lúc nào nên không giữ state trong biến.
+- PWA cần `manifest.json` (name, icons, `start_url`, `display`) để installable.
+- Dọn cache cũ trong sự kiện `activate` theo tên phiên bản.
+
+<Callout type="pitfall">
+Cache file `sw.js` quá lâu hoặc quên đổi tên cache khiến người dùng kẹt bản cũ. Luôn serve `sw.js` với `Cache-Control: no-cache` và có cơ chế báo "có bản mới".
+</Callout>

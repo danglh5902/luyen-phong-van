@@ -1,0 +1,28 @@
+---
+title: "Chuẩn hoá 1NF-3NF là gì và khi nào nên denormalize?"
+topic: sql
+roles: [backend, fullstack]
+level: mid
+tags: [normalization, denormalization, schema-design]
+answer: "1NF: giá trị nguyên tử, không nhóm lặp. 2NF: không phụ thuộc một phần vào khoá ghép. 3NF: không phụ thuộc bắc cầu vào thuộc tính không khoá. Chuẩn hoá giảm trùng lặp và bất thường khi ghi; denormalize đánh đổi để đọc nhanh hơn."
+---
+- **1NF**: mỗi ô một giá trị nguyên tử (không lưu `"a,b,c"` trong một cột).
+- **2NF**: đã 1NF và mọi cột không khoá phụ thuộc toàn bộ khoá chính (quan trọng với khoá ghép).
+- **3NF**: đã 2NF và không có phụ thuộc bắc cầu, ví dụ `orders(id, zip, city)` với `zip -> city` nên tách `city` sang bảng riêng.
+
+```sql
+-- Chuẩn hoá: city nằm ở một nơi
+orders(id, user_id, zip)    zips(zip, city)
+-- Denormalize: lưu bản sao để khỏi JOIN
+orders(id, user_id, zip, city)
+```
+
+| | Chuẩn hoá | Denormalize |
+|---|---|---|
+| Ghi/sửa | ít bất thường | phải đồng bộ nhiều chỗ |
+| Đọc | cần JOIN | nhanh |
+| Dùng cho | OLTP | báo cáo, đọc nặng, cache |
+
+<Callout type="followup">
+Hỏi tiếp: làm sao giữ bản denormalized nhất quán (trigger, materialized view, xử lý bất đồng bộ)?
+</Callout>

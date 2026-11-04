@@ -1,0 +1,26 @@
+---
+title: "Load balancer: L4 vs L7 và các thuật toán phân phối"
+topic: system-design
+roles: [backend, fullstack, devops]
+level: junior
+tags: [load-balancer, l4, l7, round-robin]
+answer: "L4 cân bằng ở tầng TCP/UDP theo IP và port: nhanh, không đọc nội dung. L7 hiểu HTTP nên định tuyến theo URL, header, cookie, có thể terminate TLS. Thuật toán phổ biến: round robin, weighted, least connections, IP hash; kèm health check để loại node lỗi."
+---
+| | L4 | L7 |
+|---|---|---|
+| Tầng | TCP/UDP | HTTP/gRPC |
+| Quyết định theo | IP, port | path, host, header, cookie |
+| Chi phí | thấp | cao hơn |
+| Tính năng | chuyển tiếp | TLS termination, rewrite, canary |
+| Ví dụ | AWS NLB, LVS | Nginx, HAProxy, AWS ALB |
+
+| Thuật toán | Dùng khi |
+|---|---|
+| Round robin | request đồng đều, node ngang nhau |
+| Weighted | node cấu hình khác nhau |
+| Least connections | request có thời gian xử lý chênh lệch |
+| IP hash / consistent hash | cần dính một client vào một node |
+
+<Callout type="pitfall">
+Bản thân load balancer cũng là single point of failure: cần chạy cặp active-passive/active-active hoặc dùng dịch vụ managed. Sticky session làm tải lệch và cản trở scale, nên ưu tiên app stateless.
+</Callout>

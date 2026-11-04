@@ -1,0 +1,32 @@
+---
+title: "Middleware trong Next.js chạy ở đâu, dùng làm gì và có những giới hạn nào?"
+topic: nextjs
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [middleware, edge-runtime, auth, matcher]
+answer: "Middleware chạy trước khi request tới route, mặc định ở Edge runtime, dùng để redirect, rewrite, set header/cookie, kiểm tra auth sơ bộ. Giới hạn: không có Node API (fs, nhiều driver DB), giới hạn kích thước bundle, thời gian chạy ngắn; nên dùng matcher để thu hẹp phạm vi."
+---
+```ts
+// middleware.ts (ở root hoặc trong src/)
+import { NextResponse, type NextRequest } from "next/server";
+
+export function middleware(req: NextRequest) {
+  const token = req.cookies.get("session")?.value;
+  if (!token) return NextResponse.redirect(new URL("/login", req.url));
+  return NextResponse.next();
+}
+
+export const config = { matcher: ["/dashboard/:path*"] };
+```
+
+- Edge runtime là tập con Web API (Request, Response, `fetch`, Web Crypto); không dùng được `fs`, `net`, Prisma kiểu truyền thống. Có thể chọn Node runtime cho middleware ở các bản mới (ổn định từ Next 15.5).
+- Chạy trên mọi request khớp matcher, kể cả prefetch và `_next/data`, nên phải nhẹ.
+- Không thích hợp để gọi DB nặng hoặc render UI.
+
+<Callout type="pitfall">
+Không dựa duy nhất vào middleware để bảo vệ dữ liệu. Lỗ hổng CVE-2025-29927 (header `x-middleware-subrequest`) cho phép bỏ qua middleware ở các bản cũ. Luôn kiểm tra quyền lại tại tầng truy cập dữ liệu hoặc Server Action.
+</Callout>
+
+<Callout type="followup">
+Middleware có thể chặn cache của route không? Nó chạy trước cache, nên rewrite/redirect theo cookie vẫn hoạt động ngay cả với route static.
+</Callout>

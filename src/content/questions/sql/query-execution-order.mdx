@@ -1,0 +1,27 @@
+---
+title: "Thứ tự thực thi logic của một câu SELECT là gì?"
+topic: sql
+roles: [backend, fullstack, devops]
+level: junior
+tags: [select, execution-order, alias]
+answer: "Thứ tự logic: FROM/JOIN, WHERE, GROUP BY, HAVING, SELECT, DISTINCT, ORDER BY, LIMIT. Vì vậy alias khai báo ở SELECT không dùng được trong WHERE nhưng dùng được trong ORDER BY."
+---
+```text
+1. FROM / JOIN     -> xác định tập dòng nguồn
+2. WHERE           -> lọc dòng
+3. GROUP BY        -> gom nhóm
+4. HAVING          -> lọc nhóm
+5. SELECT          -> tính biểu thức, đặt alias
+6. DISTINCT
+7. ORDER BY        -> sắp xếp (thấy alias)
+8. LIMIT / OFFSET
+```
+
+```sql
+SELECT price * qty AS amount FROM items
+WHERE amount > 100;            -- lỗi ở nhiều DBMS: alias chưa tồn tại
+```
+
+<Callout type="pitfall">
+Đây là thứ tự logic; optimizer có thể thực thi vật lý khác miễn kết quả tương đương. Một số DBMS (MySQL, PostgreSQL cho GROUP BY) cho phép alias ở vài mệnh đề, nhưng không nên dựa vào.
+</Callout>

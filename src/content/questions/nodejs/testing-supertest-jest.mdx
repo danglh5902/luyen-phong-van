@@ -1,0 +1,38 @@
+---
+title: "Test API Express với Jest và Supertest, mock dependency thế nào?"
+topic: nodejs
+roles: [backend, fullstack]
+level: mid
+tags: [testing, jest, supertest, mock]
+answer: "Tách app khỏi app.listen để Supertest gọi trực tiếp app mà không mở port. Mock tầng ngoài (DB, HTTP bên thứ ba) bằng jest.mock hoặc truyền dependency vào, kiểm tra status, body và side effect. Phân tầng: unit nhiều, integration với DB thật (container) vừa phải."
+---
+```js
+// app.js: export app, không listen
+module.exports = (deps) => {
+  const app = require('express')();
+  app.get('/users/:id', async (req, res) => {
+    const u = await deps.userRepo.find(req.params.id);
+    u ? res.json(u) : res.sendStatus(404);
+  });
+  return app;
+};
+
+// app.test.js
+const request = require('supertest');
+const repo = { find: jest.fn() };
+const app = require('./app')({ userRepo: repo });
+
+test('404 khi không có user', async () => {
+  repo.find.mockResolvedValue(null);
+  await request(app).get('/users/1').expect(404);
+  expect(repo.find).toHaveBeenCalledWith('1');
+});
+```
+
+- `jest.mock('module')` thay module tại import; truyền dependency vào (DI) thì dễ test hơn.
+- Dọn mock giữa các test (`clearMocks`) và đóng kết nối DB ở `afterAll`.
+- Integration test dùng DB thật (Testcontainers) để bắt lỗi query/migration mà mock không thấy.
+
+<Callout type="pitfall">
+Mock quá nhiều khiến test chỉ kiểm tra chính mock. Test chạy song song dùng chung DB gây flaky; hãy cô lập dữ liệu hoặc schema theo worker.
+</Callout>

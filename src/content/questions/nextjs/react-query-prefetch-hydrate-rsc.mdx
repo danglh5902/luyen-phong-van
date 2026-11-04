@@ -1,0 +1,33 @@
+---
+title: "Kết hợp TanStack Query với Server Components: prefetch và HydrationBoundary?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: senior
+tags: [react-query, rsc, hydration]
+answer: "Tạo `QueryClient` mỗi request ở server, `prefetchQuery` trong Server Component rồi bọc con bằng `<HydrationBoundary state={dehydrate(client)}>`. Client Component dùng `useQuery` cùng `queryKey` sẽ có data ngay và vẫn refetch/invalidate như thường. Đặt `staleTime` lớn hơn 0 để tránh refetch ngay."
+---
+```tsx
+// app/posts/page.tsx (Server Component)
+export default async function Page() {
+  const qc = new QueryClient(); // mới cho mỗi request, tránh rò dữ liệu giữa user
+  await qc.prefetchQuery({ queryKey: ["posts"], queryFn: getPosts });
+  return (
+    <HydrationBoundary state={dehydrate(qc)}>
+      <Posts />
+    </HydrationBoundary>
+  );
+}
+
+// Posts.tsx
+"use client";
+const { data } = useQuery({ queryKey: ["posts"], queryFn: getPosts, staleTime: 60_000 });
+```
+
+- Provider ở client: tạo `QueryClient` bằng `useState(() => new QueryClient())`, không tạo ở module scope (sẽ chia sẻ giữa các request khi SSR).
+- Vì sao dùng: có SSR, đồng thời giữ cache, mutation, invalidate, optimistic update ở client.
+- Không `await` mọi prefetch để khỏi chặn: có thể prefetch không await và dehydrate query đang pending (cần cấu hình `shouldDehydrateQuery` để gồm pending, v5).
+- Nếu chỉ hiển thị tĩnh, fetch thẳng trong Server Component đơn giản hơn; chỉ thêm React Query khi cần tương tác dữ liệu ở client (polling, infinite scroll, mutation).
+
+<Callout type="pitfall">
+Dữ liệu phải serialize được (không Date/Map thuần nếu không có serializer). `staleTime` mặc định 0 khiến client refetch ngay sau hydrate, làm mất lợi ích prefetch.
+</Callout>

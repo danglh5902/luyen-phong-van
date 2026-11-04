@@ -1,0 +1,42 @@
+---
+title: "CQRS trong NestJS (@nestjs/cqrs): Command, Query, Event và khi nào nên dùng?"
+topic: nestjs
+roles: [backend, fullstack]
+level: senior
+tags: [cqrs, architecture, events, ddd]
+answer: "CQRS tách đường ghi (Command, đổi trạng thái) và đường đọc (Query, không side effect). @nestjs/cqrs cung cấp CommandBus, QueryBus, EventBus với handler riêng cho từng loại. Hữu ích khi nghiệp vụ phức tạp, read/write có yêu cầu khác nhau; với CRUD đơn giản thì thừa."
+---
+```ts
+export class CreateOrderCommand { constructor(public readonly userId: number) {} }
+
+@CommandHandler(CreateOrderCommand)
+export class CreateOrderHandler implements ICommandHandler<CreateOrderCommand> {
+  constructor(private repo: OrderRepo, private events: EventBus) {}
+  async execute(cmd: CreateOrderCommand) {
+    const order = await this.repo.create(cmd.userId);
+    this.events.publish(new OrderCreatedEvent(order.id));
+    return order.id;
+  }
+}
+
+@QueryHandler(GetOrderQuery)
+export class GetOrderHandler implements IQueryHandler<GetOrderQuery> {
+  execute(q: GetOrderQuery) { return this.readModel.find(q.id); }
+}
+
+// controller: this.commandBus.execute(new CreateOrderCommand(1))
+```
+
+| | Command | Query | Event |
+|---|---|---|---|
+| Ý nghĩa | Ý định thay đổi | Câu hỏi | Điều đã xảy ra |
+| Handler | Đúng 1 | Đúng 1 | 0..N (`@EventsHandler`) |
+| Trả về | Tối thiểu (id) | Dữ liệu | Không |
+
+- `Saga` (RxJS) điều phối quy trình dài: bắt event rồi phát command tiếp theo.
+- Có thể tách read model (denormalized, cache, Elasticsearch) khỏi write model, đạt eventual consistency.
+- `EventBus` trong process không bền: crash là mất event; cần outbox + message broker nếu yêu cầu đảm bảo.
+
+<Callout type="pitfall">
+Áp CQRS cho CRUD đơn giản chỉ thêm boilerplate. Read model tách rời đồng nghĩa dữ liệu đọc có thể trễ, UI phải chấp nhận.
+</Callout>

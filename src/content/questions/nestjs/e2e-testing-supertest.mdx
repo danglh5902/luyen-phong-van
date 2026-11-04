@@ -1,0 +1,36 @@
+---
+title: "E2E test NestJS với Supertest: dựng app, override provider và dọn dữ liệu"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [testing, e2e, supertest, overrideprovider]
+answer: "Tạo module test bằng Test.createTestingModule({ imports: [AppModule] }), có thể overrideProvider để thay thành phần ngoài, gọi createNestApplication() rồi app.init(), và dùng Supertest request(app.getHttpServer()). Phải áp lại global pipe/filter như main.ts và app.close() ở afterAll."
+---
+```ts
+describe('Users (e2e)', () => {
+  let app: INestApplication;
+
+  beforeAll(async () => {
+    const mod = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(MailService).useValue({ send: jest.fn() })
+      .compile();
+    app = mod.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true })); // giống main.ts
+    await app.init();
+  });
+
+  it('POST /users trả 400 khi email sai', () =>
+    request(app.getHttpServer()).post('/users').send({ email: 'x' }).expect(400));
+
+  afterAll(() => app.close());
+});
+```
+
+- Global pipe/filter/guard đăng ký trong `main.ts` không tự có trong test; nên đưa vào `APP_PIPE` hoặc dùng chung hàm `setupApp(app)`.
+- Có thể `overrideGuard(JwtAuthGuard).useValue(...)` để bỏ qua auth khi test nghiệp vụ.
+- DB thật cho e2e: dùng container (Testcontainers) và migrate/reset dữ liệu giữa các test.
+- Chạy với `jest --runInBand` hoặc schema riêng cho mỗi worker để tránh giẫm chân nhau.
+
+<Callout type="pitfall">
+Quên `app.close()` làm Jest không thoát (open handle: DB connection, queue worker).
+</Callout>

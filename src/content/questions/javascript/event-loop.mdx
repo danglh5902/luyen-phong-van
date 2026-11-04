@@ -1,0 +1,27 @@
+---
+title: "Event loop hoạt động thế nào? Microtask vs macrotask?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [async, promise]
+answer: "JS đơn luồng; event loop chạy hết code đồng bộ, rồi xử lý toàn bộ microtask (Promise.then) trước, sau đó mới lấy 1 macrotask (setTimeout, I/O) tiếp theo."
+---
+import Runnable from "../../../components/Runnable";
+
+## Thứ tự ưu tiên
+
+1. Call stack (code đồng bộ)
+2. Microtask queue: `Promise.then`, `queueMicrotask`
+3. Macrotask queue: `setTimeout`, `setInterval`, I/O, sự kiện UI
+
+## Ví dụ: đoán output
+
+<Runnable client:visible lang="js" code={`console.log('1');
+setTimeout(() => console.log('2 timeout'), 0);
+Promise.resolve().then(() => console.log('3 promise'));
+console.log('4');
+// Output: 1, 4, 3 promise, 2 timeout`} />
+
+<Callout type="pitfall">
+`setTimeout(fn, 0)` không chạy ngay: nó luôn đợi code đồng bộ và mọi microtask xong.
+</Callout>

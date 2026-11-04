@@ -1,0 +1,35 @@
+---
+title: "Idempotency key, eventual consistency và saga"
+topic: system-design
+roles: [backend, devops]
+level: senior
+tags: [idempotency, saga, eventual-consistency, distributed-transaction]
+answer: "Thao tác idempotent cho cùng kết quả dù gọi nhiều lần: client gửi Idempotency-Key, server lưu key và kết quả để trả lại khi retry. Với giao dịch xuyên nhiều service, saga chia thành chuỗi giao dịch cục bộ, mỗi bước có compensating action để hoàn tác, hệ thống nhất quán dần (eventual consistency)."
+---
+```text
+POST /payments
+Idempotency-Key: 7d1f-...        # client sinh, giữ nguyên khi retry
+-> lần 1: xử lý, lưu (key -> response)
+-> lần 2 cùng key: trả lại response đã lưu, không trừ tiền lại
+```
+
+```sql
+-- UNIQUE chặn xử lý trùng ở tầng DB
+CREATE TABLE idempotency_keys (key TEXT PRIMARY KEY, response JSONB, created_at TIMESTAMPTZ);
+```
+
+Saga đặt hàng:
+
+```text
+Tạo đơn -> Trừ kho -> Thanh toán
+              (thanh toán lỗi) -> Hoàn kho (compensate) -> Huỷ đơn
+```
+
+| Kiểu saga | Mô tả |
+|---|---|
+| Choreography | các service phát sự kiện, phản ứng với nhau |
+| Orchestration | một orchestrator điều phối từng bước |
+
+<Callout type="pitfall">
+Message broker thường giao at-least-once, nên consumer phải idempotent. Để ghi DB và phát sự kiện nhất quán, dùng transactional outbox thay vì ghi hai nơi riêng.
+</Callout>

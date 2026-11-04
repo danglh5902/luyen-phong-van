@@ -1,0 +1,33 @@
+---
+title: "require() hoạt động thế nào? Module cache và resolution"
+topic: nodejs
+roles: [backend, fullstack]
+level: junior
+tags: [commonjs, require, module-cache]
+answer: "require() resolve đường dẫn, đọc và bọc file trong function wrapper, thực thi một lần rồi lưu module.exports vào require.cache theo đường dẫn tuyệt đối. Lần gọi sau trả về cùng object đã cache, nên module hoạt động như singleton."
+---
+Quy trình `require('x')`: resolve (core module, đường dẫn tương đối, rồi tìm trong `node_modules` từ thư mục hiện tại đi lên) → load → bọc trong wrapper `(exports, require, module, __filename, __dirname)` → chạy → cache.
+
+```js
+// counter.js
+let n = 0;
+module.exports = { inc: () => ++n };
+
+// app.js
+const a = require('./counter');
+const b = require('./counter');
+a.inc();
+console.log(b.inc());          // 2 vì a và b là cùng một object
+delete require.cache[require.resolve('./counter')]; // ép load lại
+```
+
+- `exports` chỉ là tham chiếu ban đầu tới `module.exports`; gán `exports = ...` không có tác dụng, phải gán `module.exports = ...`.
+- Với circular require, module nhận được object `exports` chưa hoàn chỉnh tại thời điểm đó.
+
+<Callout type="tip">
+Cache khiến module dùng làm singleton (config, DB client). Nhưng nếu cùng package được cài ở hai đường dẫn khác nhau trong `node_modules`, sẽ có hai instance.
+</Callout>
+
+<Callout type="pitfall">
+Xoá `require.cache` trong production dễ gây rò rỉ và trạng thái không nhất quán; chỉ nên dùng cho hot-reload hoặc test.
+</Callout>

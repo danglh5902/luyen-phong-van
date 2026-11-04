@@ -1,0 +1,21 @@
+---
+title: "git fetch và git pull khác nhau thế nào?"
+topic: git
+roles: [backend, fullstack, devops, frontend]
+level: junior
+tags: [fetch, pull, remote, origin]
+answer: "git fetch chỉ tải commit mới từ remote và cập nhật nhánh remote-tracking (origin/main), không đụng vào nhánh hiện tại. git pull = fetch + merge (hoặc rebase với --rebase) vào nhánh hiện tại, nên có thể gây conflict ngay."
+---
+```bash
+git fetch origin                 # an toàn: chỉ cập nhật origin/*
+git log HEAD..origin/main        # xem remote có gì mới
+git merge origin/main            # tự quyết định tích hợp
+
+git pull                         # = git fetch + git merge
+git pull --rebase                # = git fetch + git rebase
+git config --global pull.rebase true
+```
+
+<Callout type="tip">
+Thói quen tốt: `fetch` trước để xem thay đổi, rồi mới merge hoặc rebase. `git pull --ff-only` từ chối nếu không thể fast-forward, tránh tạo merge commit ngoài ý muốn.
+</Callout>

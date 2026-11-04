@@ -1,0 +1,27 @@
+---
+title: "NULL trong SQL gây những cạm bẫy nào?"
+topic: sql
+roles: [backend, fullstack]
+level: junior
+tags: ["null", three-valued-logic, coalesce]
+answer: "NULL nghĩa là không xác định: mọi so sánh với NULL (kể cả NULL = NULL) cho UNKNOWN, nên phải dùng IS NULL. NOT IN với danh sách chứa NULL không trả dòng nào; hàm tổng hợp bỏ qua NULL (trừ COUNT(*))."
+---
+```sql
+SELECT * FROM users WHERE phone = NULL;     -- luôn rỗng
+SELECT * FROM users WHERE phone IS NULL;    -- đúng
+
+-- NOT IN gặp NULL => không có dòng nào
+SELECT * FROM a WHERE id NOT IN (SELECT a_id FROM b);  -- nếu b.a_id có NULL
+-- An toàn hơn:
+SELECT * FROM a WHERE NOT EXISTS (SELECT 1 FROM b WHERE b.a_id = a.id);
+
+SELECT COALESCE(nickname, name) FROM users; -- giá trị mặc định
+```
+
+- `COUNT(col)` bỏ qua NULL, `COUNT(*)` đếm mọi dòng.
+- `AVG` bỏ qua NULL nên có thể lệch so với kỳ vọng.
+- Với ORDER BY, vị trí NULL khác nhau theo DBMS.
+
+<Callout type="tip">
+Ưu tiên `NOT EXISTS` thay `NOT IN` khi subquery có thể trả NULL.
+</Callout>

@@ -1,0 +1,35 @@
+---
+title: "Hydration error trong Next.js là gì, nguyên nhân phổ biến và cách sửa?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: mid
+tags: [hydration, ssr, debugging]
+answer: "Hydration error xảy ra khi HTML do server render khác với kết quả render đầu tiên ở client. Nguyên nhân hay gặp: Date/Math.random/locale, truy cập window/localStorage khi render, HTML lồng sai (div trong p), extension trình duyệt. Sửa bằng useEffect/useState sau mount, hoặc suppressHydrationWarning."
+---
+```tsx
+"use client";
+import { useEffect, useState } from "react";
+
+export function Clock() {
+  const [now, setNow] = useState<string | null>(null);
+  useEffect(() => setNow(new Date().toLocaleTimeString()), []);
+  // Lần render đầu giống server (null), sau mount mới có giá trị
+  return <span>{now ?? "--:--"}</span>;
+}
+```
+
+| Nguyên nhân | Cách xử lý |
+|---|---|
+| `new Date()`, `Math.random()`, `Intl` khác locale/timezone | tính sau mount, hoặc truyền giá trị từ server làm prop |
+| `typeof window !== 'undefined'` rẽ nhánh khi render | chuyển vào `useEffect` |
+| HTML lồng sai (`div` trong `p`, `a` trong `a`) | sửa cấu trúc thẻ |
+| Extension chèn DOM, nội dung 1 phần tử khác | `suppressHydrationWarning` trên đúng phần tử |
+| Component chỉ chạy ở client | `next/dynamic` với `ssr: false` (trong Client Component) |
+
+<Callout type="pitfall">
+`suppressHydrationWarning` chỉ có tác dụng một cấp và chỉ cho nội dung text/attribute; nó che lỗi chứ không sửa nguyên nhân. Đừng lạm dụng.
+</Callout>
+
+<Callout type="followup">
+Vì sao Server Component không gây hydration error? Chúng không hydrate; chỉ Client Component được hydrate dựa trên HTML đã render.
+</Callout>

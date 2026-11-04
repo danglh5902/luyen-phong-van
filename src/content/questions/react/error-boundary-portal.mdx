@@ -1,0 +1,28 @@
+---
+title: "Error Boundary và Portal trong React dùng khi nào?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [error-boundary, portal, modal]
+answer: "Error Boundary là class component có getDerivedStateFromError/componentDidCatch, bắt lỗi render của cây con và hiển thị fallback, không bắt lỗi event handler hay code async. Portal render con vào DOM node khác (modal, tooltip) nhưng vẫn nằm trong cây React."
+---
+```jsx
+class ErrorBoundary extends React.Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) { report(error, info.componentStack); }
+  render() { return this.state.error ? <Fallback /> : this.props.children; }
+}
+
+function Modal({ children }) {
+  return createPortal(<div className="modal">{children}</div>, document.body);
+}
+```
+
+Error Boundary không bắt được: lỗi trong event handler, `setTimeout`/promise, SSR, và lỗi của chính boundary. Event handler dùng try/catch; thư viện `react-error-boundary` cung cấp bản tiện dụng với `resetKeys`.
+
+Portal giải quyết việc `overflow: hidden`, `z-index`, `transform` của cha cắt xén modal. Event vẫn bubble theo cây React (không theo cây DOM), nên `onClick` ở cha vẫn nhận click từ modal; context cũng truyền xuyên portal.
+
+<Callout type="tip">
+Đặt nhiều boundary ở các cấp (toàn app, từng route, widget) để một widget lỗi không làm sập cả trang.
+</Callout>

@@ -1,0 +1,23 @@
+---
+title: "INNER, LEFT, RIGHT, FULL JOIN khác nhau thế nào?"
+topic: sql
+roles: [backend, fullstack, devops]
+level: junior
+tags: [join]
+answer: "INNER lấy các dòng khớp ở cả hai bảng; LEFT giữ mọi dòng bảng trái (không khớp thì NULL); RIGHT ngược lại; FULL giữ tất cả dòng của cả hai."
+---
+```sql
+-- users(id, name)   orders(id, user_id, total)
+SELECT u.name, o.total
+FROM users u
+LEFT JOIN orders o ON o.user_id = u.id;   -- user chưa mua vẫn xuất hiện, total = NULL
+
+-- Tìm user chưa có đơn hàng
+SELECT u.* FROM users u
+LEFT JOIN orders o ON o.user_id = u.id
+WHERE o.id IS NULL;
+```
+
+<Callout type="pitfall">
+Đặt điều kiện của bảng phải vào `WHERE` sẽ biến LEFT JOIN thành INNER JOIN. Hãy đặt trong `ON`.
+</Callout>

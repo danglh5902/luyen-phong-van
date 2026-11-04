@@ -1,0 +1,27 @@
+---
+title: "any, unknown và never khác nhau thế nào?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [types]
+answer: "any tắt kiểm tra kiểu; unknown là 'any an toàn' (phải thu hẹp kiểu trước khi dùng); never là kiểu không có giá trị (hàm throw, nhánh không thể xảy ra)."
+---
+import Runnable from "../../../components/Runnable";
+
+<Runnable client:visible lang="ts" code={`function parse(input: unknown): string {
+  if (typeof input === 'string') return input.toUpperCase(); // đã thu hẹp
+  if (typeof input === 'number') return input.toFixed(1);
+  return 'không rõ';
+}
+console.log(parse('hi'), parse(3), parse({}));
+
+// never: kiểm tra đủ nhánh (exhaustive check)
+type Shape = 'circle' | 'square';
+function area(s: Shape): number {
+  switch (s) {
+    case 'circle': return 3.14;
+    case 'square': return 1;
+    default: { const _x: never = s; return _x; } // thêm Shape mới -> báo lỗi
+  }
+}
+console.log(area('circle'));`} />

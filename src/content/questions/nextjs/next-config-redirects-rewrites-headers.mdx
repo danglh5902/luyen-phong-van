@@ -1,0 +1,35 @@
+---
+title: "redirects, rewrites và headers trong next.config khác nhau thế nào?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: mid
+tags: [next-config, redirects, rewrites]
+answer: "`redirects` trả 307/308 và đổi URL trên trình duyệt; `rewrites` giữ nguyên URL nhưng map sang đường dẫn/URL khác (hữu ích làm proxy API); `headers` thêm HTTP header cho response. Cả ba khai báo tĩnh, chạy trước filesystem routes, và hỗ trợ `has`/`missing` để match theo header, cookie, query."
+---
+```js
+// next.config.js
+module.exports = {
+  async redirects() {
+    return [{ source: "/old/:slug", destination: "/new/:slug", permanent: true }]; // 308
+  },
+  async rewrites() {
+    return [{ source: "/api/:path*", destination: "https://backend.example.com/:path*" }];
+  },
+  async headers() {
+    return [{ source: "/(.*)", headers: [{ key: "X-Content-Type-Options", value: "nosniff" }] }];
+  },
+};
+```
+
+| | URL trên trình duyệt | Mã trạng thái |
+|---|---|---|
+| redirects | đổi | 307 (`permanent: false`) / 308 (`true`) |
+| rewrites | giữ nguyên | 200 |
+
+- Cấu hình tĩnh trong build, nên giá trị phụ thuộc request (đọc cookie, A/B) dùng Middleware.
+- Rewrites có 3 pha (`beforeFiles`, `afterFiles`, `fallback`) để kiểm soát thứ tự với file system.
+- Rewrite ra domain ngoài giúp tránh CORS, nhưng backend phải tin cậy.
+
+<Callout type="pitfall">
+`permanent: true` bị trình duyệt cache rất lâu; sai cấu hình rất khó thu hồi. Thử bằng `false` trước.
+</Callout>

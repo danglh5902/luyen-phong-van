@@ -1,0 +1,29 @@
+---
+title: "HTTP/1.1, HTTP/2 và HTTP/3 khác nhau thế nào?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: senior
+tags: [http2, http3, quic, multiplexing, performance]
+answer: "HTTP/1.1 text, mỗi kết nối xử lý tuần tự (head-of-line blocking ở tầng HTTP). HTTP/2 dùng binary framing, multiplexing nhiều stream trên một kết nối TCP và nén header HPACK. HTTP/3 chạy trên QUIC (UDP) nên loại bỏ head-of-line blocking ở tầng TCP, kết nối nhanh hơn và chịu đổi mạng tốt."
+---
+| | HTTP/1.1 | HTTP/2 | HTTP/3 |
+|---|---|---|---|
+| Định dạng | Text | Binary frame | Binary frame |
+| Transport | TCP | TCP | QUIC (UDP) |
+| Đa luồng | Nhiều kết nối (~6/domain) | Multiplexing trên 1 kết nối | Multiplexing, stream độc lập |
+| Nén header | Không | HPACK | QPACK |
+| Head-of-line blocking | Tầng HTTP | Còn ở tầng TCP | Không giữa các stream |
+| Handshake | TCP + TLS riêng | TCP + TLS | Gộp QUIC + TLS 1.3 (1-RTT, 0-RTT) |
+
+- HTTP/2 làm các mẹo cũ của HTTP/1.1 như domain sharding, gộp sprite/bundle quá mức trở nên không cần hoặc phản tác dụng.
+- Mất một gói TCP làm mọi stream HTTP/2 chờ; QUIC chỉ chặn stream bị ảnh hưởng.
+- QUIC dùng connection ID nên chuyển Wi-Fi sang 4G không phải bắt tay lại.
+- Server quảng bá HTTP/3 qua header `Alt-Svc`; trình duyệt vẫn bắt đầu bằng HTTP/2 rồi nâng cấp.
+
+```http
+Alt-Svc: h3=":443"; ma=86400
+```
+
+<Callout type="pitfall">
+Server Push của HTTP/2 hầu như đã bị loại bỏ (Chrome gỡ hỗ trợ); dùng `preload` hoặc 103 Early Hints thay thế.
+</Callout>

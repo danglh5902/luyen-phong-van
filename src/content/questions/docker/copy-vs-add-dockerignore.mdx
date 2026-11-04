@@ -1,0 +1,31 @@
+---
+title: "COPY vs ADD và vai trò của .dockerignore"
+topic: docker
+roles: [backend, fullstack, devops]
+level: mid
+tags: [dockerfile, copy, add, dockerignore, build-context]
+answer: "COPY chỉ sao chép file từ build context vào image. ADD làm thêm việc giải nén tar cục bộ và tải URL nên khó đoán, chỉ dùng khi cần. .dockerignore loại file khỏi build context, giúp build nhanh hơn, tránh lộ secret và không phá layer cache."
+---
+```dockerfile
+COPY package*.json ./
+RUN npm ci
+COPY . .
+ADD rootfs.tar.gz /   # trường hợp hợp lý: tự giải nén tar cục bộ
+```
+
+```text
+# .dockerignore
+node_modules
+.git
+.env
+*.log
+dist
+```
+
+- Toàn bộ build context được gửi cho daemon; thiếu `.dockerignore` thì `node_modules`, `.git` bị gửi theo.
+- `COPY . .` kèm `.env` có thể đưa secret vào image.
+- ADD từ URL không có checksum mặc định, ưu tiên `curl` hoặc `COPY --from` trong multi-stage.
+
+<Callout type="tip">
+Mặc định hãy dùng `COPY`; chỉ dùng `ADD` khi cần tự giải nén tar cục bộ.
+</Callout>

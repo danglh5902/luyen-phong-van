@@ -1,0 +1,30 @@
+---
+title: "Phân trang OFFSET và keyset (seek) khác nhau thế nào?"
+topic: sql
+roles: [backend, fullstack]
+level: senior
+tags: [pagination, keyset, offset, performance]
+answer: "OFFSET n phải quét rồi bỏ n dòng nên càng sang trang sâu càng chậm và dễ lệch dữ liệu khi có insert/delete. Keyset dùng điều kiện trên khoá đã sắp xếp (WHERE id < last_id) nên dùng index, thời gian ổn định, nhưng không nhảy được tới trang bất kỳ."
+---
+```sql
+-- OFFSET: trang 5000 vẫn đọc 100000 dòng rồi bỏ
+SELECT * FROM posts ORDER BY id DESC LIMIT 20 OFFSET 100000;
+
+-- Keyset: client gửi id cuối trang trước
+SELECT * FROM posts
+WHERE id < :last_id
+ORDER BY id DESC
+LIMIT 20;
+
+-- Sắp xếp theo nhiều cột: row-value comparison + index (created_at, id)
+SELECT * FROM posts
+WHERE (created_at, id) < (:last_ts, :last_id)
+ORDER BY created_at DESC, id DESC LIMIT 20;
+```
+
+- Cột sắp xếp phải duy nhất (thêm `id` làm tie-breaker) để không bỏ sót/trùng dòng.
+- API thường trả `next_cursor` (mã hoá giá trị cuối).
+
+<Callout type="tip">
+Dùng OFFSET cho dữ liệu nhỏ hoặc cần nhảy trang; dùng keyset cho feed, infinite scroll, bảng lớn.
+</Callout>

@@ -1,0 +1,30 @@
+---
+title: "next/dynamic và phân tích bundle: giảm JavaScript gửi tới client thế nào?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: mid
+tags: [performance, bundle, code-splitting]
+answer: "`next/dynamic` lazy-load Client Component (code-splitting, tùy chọn `ssr: false`, `loading`). Đo bằng `@next/bundle-analyzer` để tìm thư viện nặng, rồi giữ logic ở Server Component, import theo module con và chỉ load khi cần."
+---
+```tsx
+"use client";
+import dynamic from "next/dynamic";
+
+const Chart = dynamic(() => import("./Chart"), {
+  loading: () => <p>Đang tải biểu đồ...</p>,
+  ssr: false, // thư viện đụng window
+});
+```
+
+Quy trình tối ưu:
+1. Bật analyzer: `withBundleAnalyzer({ enabled: process.env.ANALYZE === "true" })(nextConfig)`, chạy `ANALYZE=true next build`. (Turbopack có analyzer riêng ở bản mới.)
+2. Tìm chunk lớn, như moment, lodash toàn bộ, thư viện chart, editor.
+3. Xử lý: import theo hàm (`lodash/debounce` hoặc `lodash-es`), thay thư viện nhẹ hơn, dynamic import phần dưới fold/modal.
+4. Chuyển phần không tương tác sang Server Component, vì thư viện chỉ dùng ở server không vào bundle client.
+
+- `optimizePackageImports` trong `next.config` giúp tree-shake thư viện barrel.
+- `React.lazy` + Suspense cũng dùng được; `next/dynamic` bổ sung `ssr: false`.
+
+<Callout type="pitfall">
+Trong Server Component, `ssr: false` với `next/dynamic` không được phép (Next 15); phải gọi từ Client Component.
+</Callout>

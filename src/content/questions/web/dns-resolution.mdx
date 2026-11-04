@@ -1,0 +1,32 @@
+---
+title: "DNS phân giải tên miền như thế nào? Các loại record và TTL?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: junior
+tags: [dns, network, ttl, cdn]
+answer: "DNS chuyển tên miền thành IP: trình duyệt/OS cache, rồi recursive resolver hỏi lần lượt root, TLD (.com), authoritative nameserver và cache kết quả theo TTL. Record thường gặp: A/AAAA (IP), CNAME (alias), MX (mail), TXT, NS."
+---
+| Record | Công dụng |
+|---|---|
+| `A` / `AAAA` | Tên miền sang IPv4 / IPv6 |
+| `CNAME` | Alias sang tên miền khác |
+| `MX` | Máy chủ mail |
+| `TXT` | Xác minh domain, SPF, DKIM |
+| `NS` | Nameserver có thẩm quyền |
+
+```text
+www.example.com -> resolver -> root (.) -> .com TLD -> ns của example.com -> 93.184.216.34
+```
+
+- TTL là thời gian record được cache; TTL thấp giúp đổi IP nhanh nhưng tăng truy vấn.
+- Đổi DNS không có hiệu lực tức thì vì cache ở nhiều tầng.
+- CNAME không đặt được tại apex domain (`example.com`) theo chuẩn; nhiều nhà cung cấp dùng ALIAS/ANAME.
+- Tối ưu phía frontend: `dns-prefetch` và `preconnect` cho domain bên thứ ba.
+
+```html
+<link rel="preconnect" href="https://cdn.example.com" crossorigin />
+```
+
+<Callout type="tip">
+CDN thường dùng CNAME trỏ về hạ tầng của nhà cung cấp, kèm DNS geo-routing để trả IP edge gần người dùng.
+</Callout>

@@ -1,0 +1,34 @@
+---
+title: "HTTP keep-alive và các timeout của Node.js server: sai cấu hình gây 502 thế nào?"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [http, keep-alive, timeout, load-balancer]
+answer: "Node server đóng kết nối idle sau keepAliveTimeout (mặc định 5s). Nếu load balancer (ALB, nginx) có idle timeout dài hơn, nó tái sử dụng kết nối vừa bị Node đóng và sinh lỗi 502/ECONNRESET. Đặt keepAliveTimeout lớn hơn idle timeout của LB và headersTimeout lớn hơn keepAliveTimeout."
+---
+```js
+const server = http.createServer(app);
+server.keepAliveTimeout = 65_000;   // > idle timeout của LB (ví dụ ALB 60s)
+server.headersTimeout = 66_000;     // > keepAliveTimeout
+server.requestTimeout = 30_000;     // tổng thời gian nhận request (chống slowloris)
+server.listen(3000);
+```
+
+| Thuộc tính | Ý nghĩa |
+|---|---|
+| `keepAliveTimeout` | Thời gian giữ socket idle để dùng lại cho request kế |
+| `headersTimeout` | Thời gian tối đa nhận đủ header |
+| `requestTimeout` | Thời gian tối đa nhận toàn bộ request |
+| `server.timeout` | Socket inactivity timeout (mặc định 0, tắt) |
+
+Race condition: LB gửi request qua kết nối keep-alive ngay lúc Node vừa đóng nó (do hết `keepAliveTimeout`), request đó mất và LB trả 502.
+
+Phía client gọi ra ngoài: dùng `http.Agent` với `keepAlive: true` (Node 19+ là mặc định cho global agent) để tránh tốn TCP/TLS handshake mỗi request, đồng thời đặt timeout cho từng request (`AbortSignal.timeout`).
+
+<Callout type="pitfall">
+Lỗi 502 ngẫu nhiên, hiếm, chỉ xảy ra dưới tải gần như luôn là mismatch keep-alive giữa LB và Node. Khó tái hiện ở local.
+</Callout>
+
+<Callout type="followup">
+Làm sao ngăn slowloris và giới hạn request body để bảo vệ server?
+</Callout>

@@ -1,0 +1,26 @@
+---
+title: "Dependency Injection và IoC container trong NestJS hoạt động ra sao?"
+topic: nestjs
+roles: [backend, fullstack]
+level: junior
+tags: [di, ioc, injectable]
+answer: "Nest có IoC container: lúc bootstrap nó đọc metadata kiểu của constructor (emitDecoratorMetadata), dựng dependency graph, tạo instance (singleton mặc định) và inject vào class cần. Class không tự new dependency, nên dễ mock và thay thế khi test."
+---
+```ts
+@Injectable()
+export class UsersService {
+  constructor(private readonly repo: UsersRepository) {} // Nest resolve theo type
+}
+```
+
+- Token mặc định là class; Nest lấy kiểu tham số từ metadata do TypeScript phát ra.
+- Với interface (không tồn tại lúc runtime) phải dùng token riêng và `@Inject('TOKEN')`.
+- Provider phải được đăng ký trong `providers` của một module.
+
+<Callout type="tip">
+Lợi ích chính: loose coupling và testability. Test chỉ cần cung cấp provider giả thay cho bản thật.
+</Callout>
+
+<Callout type="pitfall">
+Quên `@Injectable()` hoặc quên đăng ký vào `providers` dẫn tới lỗi không resolve được dependency.
+</Callout>

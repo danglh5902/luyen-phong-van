@@ -1,0 +1,32 @@
+---
+title: "Optional chaining `?.` và nullish coalescing `??` khác gì `&&` và `||`?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [es2020, operators, null-safety]
+answer: "`a?.b` trả undefined nếu `a` là null/undefined thay vì ném lỗi. `a ?? b` chỉ dùng `b` khi `a` là null/undefined, còn `a || b` dùng `b` với mọi giá trị falsy (0, \"\", false). Vì vậy `??` an toàn hơn để đặt giá trị mặc định."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`const user = { profile: null, count: 0, name: "" };
+console.log(user.profile?.email);        // undefined, không lỗi
+console.log(user.greet?.());             // undefined (method không tồn tại)
+console.log(user.count || 10, user.count ?? 10);
+console.log(user.name || "anon", user.name ?? "anon");
+const cfg = {};
+cfg.retries ??= 3;                       // gán nếu null/undefined
+console.log(cfg);`} />
+
+- Optional chaining có short-circuit: nếu vế trái nullish thì phần còn lại của chuỗi không được đánh giá.
+- Các dạng: `a?.b`, `a?.[key]`, `a?.()`.
+- `??=`, `||=`, `&&=` (ES2021) là dạng gán tương ứng.
+
+<Callout type="pitfall">
+`a?.b()` vẫn ném `TypeError` nếu `a` tồn tại nhưng `b` không phải hàm (hãy viết `a?.b?.()`). Lạm dụng `?.` cũng có thể che giấu bug dữ liệu thiếu.
+</Callout>
+
+<Callout type="followup">
+Vì sao không trộn `??` với `||`/`&&` mà không có ngoặc? (Cú pháp bị cấm, ném SyntaxError.)
+</Callout>

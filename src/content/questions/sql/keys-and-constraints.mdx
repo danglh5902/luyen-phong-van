@@ -1,0 +1,30 @@
+---
+title: "PRIMARY KEY, FOREIGN KEY và các constraint chính"
+topic: sql
+roles: [backend, fullstack, devops]
+level: mid
+tags: [primary-key, foreign-key, constraint]
+answer: "PRIMARY KEY định danh duy nhất mỗi dòng (UNIQUE + NOT NULL, một bảng chỉ có một). FOREIGN KEY ràng buộc tham chiếu sang khoá bảng khác, kèm hành vi ON DELETE. Ngoài ra có UNIQUE, NOT NULL, CHECK, DEFAULT để bảo vệ dữ liệu ngay ở DB."
+---
+```sql
+CREATE TABLE orders (
+  id         BIGINT PRIMARY KEY,
+  user_id    BIGINT NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
+  status     VARCHAR(20) NOT NULL DEFAULT 'new'
+             CHECK (status IN ('new','paid','shipped')),
+  code       VARCHAR(30) UNIQUE
+);
+```
+
+| ON DELETE | Hành vi |
+|---|---|
+| RESTRICT / NO ACTION | chặn xoá dòng cha |
+| CASCADE | xoá luôn dòng con |
+| SET NULL | đặt cột con thành NULL |
+
+- Surrogate key (id tự sinh) ổn định hơn natural key (email) vì natural key có thể đổi.
+- UNIQUE cho phép NULL (số lượng NULL tuỳ DBMS), PRIMARY KEY thì không.
+
+<Callout type="tip">
+Luôn tạo index cho cột FOREIGN KEY phía con: JOIN và kiểm tra khi xoá dòng cha sẽ nhanh hơn nhiều. Một số DBMS (PostgreSQL) không tự tạo.
+</Callout>

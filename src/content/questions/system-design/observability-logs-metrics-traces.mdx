@@ -1,0 +1,25 @@
+---
+title: "Observability: log, metrics và tracing"
+topic: system-design
+roles: [backend, devops]
+level: mid
+tags: [observability, logging, metrics, tracing, slo]
+answer: "Ba trụ cột: log (sự kiện chi tiết, tìm nguyên nhân), metrics (số liệu tổng hợp theo thời gian, dùng cho dashboard và alert), trace (theo một request đi qua nhiều service). Dùng correlation/trace id nối ba loại, và alert theo triệu chứng (SLO) thay vì nguyên nhân."
+---
+| | Log | Metrics | Trace |
+|---|---|---|---|
+| Trả lời | chuyện gì đã xảy ra | hệ thống đang khoẻ không | chậm ở service nào |
+| Chi phí lưu | cao | thấp | trung bình (thường sampling) |
+| Công cụ | ELK, Loki | Prometheus, Grafana | Jaeger, Tempo, OpenTelemetry |
+
+```text
+{"level":"error","trace_id":"4bf92f","service":"payment","msg":"timeout calling bank","ms":3001}
+```
+
+- Log có cấu trúc (JSON), kèm `trace_id`, không ghi dữ liệu nhạy cảm.
+- Metrics theo RED (Rate, Errors, Duration) cho service và USE (Utilization, Saturation, Errors) cho tài nguyên; theo dõi percentile p95, p99 thay vì trung bình.
+- Tránh label cardinality cao (user id) trong metrics.
+
+<Callout type="tip">
+Đặt SLO (ví dụ 99.9% request dưới 300ms) và cảnh báo theo error budget burn rate để giảm alert nhiễu.
+</Callout>

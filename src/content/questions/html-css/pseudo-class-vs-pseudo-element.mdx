@@ -1,0 +1,26 @@
+---
+title: "Pseudo-class và pseudo-element khác nhau thế nào?"
+topic: html-css
+roles: [frontend, fullstack]
+level: junior
+tags: [selectors, pseudo-class, pseudo-element]
+answer: "Pseudo-class (một dấu hai chấm, như :hover, :focus, :nth-child) chọn phần tử đang ở một trạng thái hoặc vị trí. Pseudo-element (hai dấu hai chấm, như ::before, ::after, ::placeholder) tạo hoặc chọn một phần ảo của phần tử."
+---
+```css
+a:hover { color: tomato; }          /* trạng thái */
+li:nth-child(2n) { background: #eee; }
+
+.badge::after {                      /* phần tử ảo */
+  content: "new";
+  margin-left: 4px;
+}
+input::placeholder { color: #999; }
+```
+
+<Callout type="pitfall">
+`::before` và `::after` không hiển thị nếu thiếu `content` (kể cả `content: ""`). Chúng cũng không áp dụng cho phần tử thay thế như `img`, `input`.
+</Callout>
+
+<Callout type="tip">
+Nội dung sinh bởi `content` có thể bị screen reader đọc; đừng đặt thông tin quan trọng trong đó.
+</Callout>

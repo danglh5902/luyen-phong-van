@@ -1,0 +1,47 @@
+---
+title: "Type TypeScript và runtime validation: vì sao cần zod?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [validation, zod, runtime, type-safety]
+answer: "Type bị xóa khi compile nên không bảo vệ dữ liệu vào lúc chạy (API response, JSON.parse, form, env). Thư viện schema như zod định nghĩa schema một lần, vừa validate runtime vừa suy ra type bằng `z.infer`, giúp biên giới hệ thống (trust boundary) an toàn thật sự thay vì chỉ ép kiểu bằng `as`."
+---
+
+## Vấn đề
+
+```ts
+const user = JSON.parse(body) as User;   // compile OK, nhưng không hề kiểm tra
+user.email.toLowerCase();                // có thể nổ runtime nếu thiếu email
+```
+
+`as User` chỉ nói dối compiler. `JSON.parse` và `response.json()` trả `any`/`unknown`; nguồn bên ngoài luôn phải được xem là không tin cậy.
+
+## Giải pháp: schema là nguồn sự thật duy nhất
+
+```ts
+import { z } from "zod";
+
+const User = z.object({
+  id: z.number().int(),
+  email: z.string().min(3),
+  age: z.number().optional(),
+});
+type User = z.infer<typeof User>;        // type suy ra từ schema
+
+const result = User.safeParse(JSON.parse(body));
+if (!result.success) return res.status(400).json(result.error.issues);
+const user = result.data;                // đã được narrow thành User
+```
+
+- Validate ở biên: request body, query, env vars, response từ service ngoài, localStorage.
+- Bên trong (sau khi đã validate) tin vào type, không cần kiểm tra lặp.
+- Schema hỗ trợ transform và coerce (chuỗi sang number/Date), union, refinement; dùng được cho form (react-hook-form) và tRPC.
+- Lựa chọn khác: Valibot (nhẹ, tree-shakeable), ArkType, io-ts, Typia (sinh code lúc build).
+
+<Callout type="pitfall">
+Tự viết type riêng song song với schema sẽ bị lệch (drift). Hãy suy ra type từ schema (`z.infer`) chứ không làm ngược lại. Validate tốn CPU: không chạy lặp ở hot path và nhớ giới hạn kích thước payload.
+</Callout>
+
+<Callout type="followup">
+Khác nhau giữa `parse` và `safeParse`? (`parse` ném `ZodError`, `safeParse` trả union `{ success, data | error }` để xử lý không cần try/catch.)
+</Callout>

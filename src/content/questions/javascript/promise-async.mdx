@@ -1,0 +1,24 @@
+---
+title: "Promise.all, allSettled, race, any khác nhau thế nào?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [promise, async]
+answer: "all: tất cả thành công, 1 lỗi là reject; allSettled: đợi hết, không bao giờ reject; race: kết quả đầu tiên (thành công hoặc lỗi); any: thành công đầu tiên."
+---
+import Runnable from "../../../components/Runnable";
+
+<Runnable client:visible lang="js" code={`const ok = (v, ms) => new Promise(r => setTimeout(() => r(v), ms));
+const bad = (ms) => new Promise((_, r) => setTimeout(() => r(new Error('x')), ms));
+
+(async () => {
+  console.log(await Promise.allSettled([ok('A', 10), bad(5)]));
+  console.log(await Promise.race([ok('chậm', 50), ok('nhanh', 5)]));
+  console.log(await Promise.any([bad(5), ok('ok', 20)]));
+  try { await Promise.all([ok('A', 10), bad(5)]); }
+  catch (e) { console.log('all reject:', e.message); }
+})();`} />
+
+<Callout type="tip">
+Gọi API độc lập song song bằng `Promise.all` thay vì `await` tuần tự trong `for`, nhanh hơn nhiều lần.
+</Callout>

@@ -1,0 +1,25 @@
+---
+title: "Các lệnh Docker cơ bản cần nắm"
+topic: docker
+roles: [backend, fullstack, devops]
+level: junior
+tags: [cli, run, ps, exec, logs]
+answer: "docker build tạo image, docker run tạo và chạy container (-d nền, -p map port, -v mount, --name, --rm), docker ps liệt kê container, docker logs xem log, docker exec chạy lệnh trong container, docker stop/rm dừng và xoá."
+---
+```bash
+docker build -t myapp:1.0 .                 # build image từ Dockerfile
+docker run -d --name web -p 8080:80 nginx   # chạy nền, host 8080 -> container 80
+docker ps            # container đang chạy (-a: gồm cả đã dừng)
+docker logs -f web   # theo dõi log
+docker exec -it web sh   # mở shell trong container đang chạy
+docker stop web && docker rm web
+docker images / docker rmi myapp:1.0
+docker system prune  # dọn tài nguyên không dùng
+```
+
+- `-p HOST:CONTAINER` publish port; không có `-p` thì chỉ truy cập được từ network Docker.
+- `--rm` tự xoá container khi dừng.
+
+<Callout type="pitfall">
+`docker run` luôn tạo container mới. Muốn chạy lại container cũ dùng `docker start`.
+</Callout>

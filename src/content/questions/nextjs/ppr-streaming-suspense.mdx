@@ -1,0 +1,35 @@
+---
+title: "Streaming với Suspense và Partial Prerendering (PPR) trong Next.js hoạt động ra sao?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: senior
+tags: [streaming, suspense, ppr, loading, ttfb]
+answer: "Streaming gửi HTML theo từng phần: shell hiển thị ngay, phần chậm bọc trong Suspense được stream sau (loading.tsx là Suspense tự động cho cả page). PPR (experimental) prerender static shell lúc build, các 'hố' dynamic trong Suspense được stream theo request, kết hợp tốc độ static với dữ liệu động."
+---
+```tsx
+import { Suspense } from "react";
+
+export default function Page() {
+  return (
+    <>
+      <Header />                      {/* static, vào shell */}
+      <Suspense fallback={<Skeleton />}>
+        <PersonalizedFeed />          {/* dùng cookies() => stream theo request */}
+      </Suspense>
+    </>
+  );
+}
+```
+
+- Không có Suspense: dùng Dynamic API làm cả route dynamic, response phải chờ xong mới trả.
+- Có Suspense: server flush shell trước (TTFB nhanh, FCP sớm), sau đó nhúng thêm chunk khi dữ liệu sẵn sàng, React hydrate chọn lọc (selective hydration).
+- PPR bật bằng `experimental.ppr` (Next 14/15 canary, chế độ `incremental` cho từng route với `export const experimental_ppr = true`). Static shell được phục vụ từ CDN/edge, phần dynamic chạy khi request.
+- Status code và header đã gửi trước khi stream xong nên không thể đổi sang redirect/404 giữa chừng (với not-found sẽ chèn meta noindex).
+
+<Callout type="tip">
+Đặt ranh giới Suspense quanh từng khối độc lập để chúng stream song song, không chặn nhau. Đọc `cookies()` càng sâu và càng gần lá càng tốt.
+</Callout>
+
+<Callout type="pitfall">
+PPR vẫn là tính năng thử nghiệm ở Next 14/15; cách bật và API đã thay đổi giữa các phiên bản, hãy kiểm tra tài liệu bản đang dùng trước khi đưa lên production.
+</Callout>

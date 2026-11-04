@@ -1,0 +1,28 @@
+---
+title: "GitFlow và trunk-based development: chọn cái nào?"
+topic: git
+roles: [backend, fullstack, devops, frontend]
+level: mid
+tags: [gitflow, trunk-based, branching, release]
+answer: "GitFlow dùng nhiều nhánh dài hạn (main, develop, release, hotfix), hợp với phát hành theo phiên bản có chu kỳ. Trunk-based có một nhánh chính, nhánh feature rất ngắn, tích hợp liên tục và dùng feature flag, hợp với CI/CD và deploy thường xuyên."
+---
+| | GitFlow | Trunk-based |
+|---|---|---|
+| Nhánh dài hạn | main, develop | chỉ main (trunk) |
+| Nhánh feature | sống lâu | sống tính bằng giờ đến vài ngày |
+| Release | nhánh `release/*` | tag từ trunk, feature flag |
+| Rủi ro | merge conflict lớn, tích hợp muộn | cần CI mạnh, test tốt |
+| Phù hợp | phần mềm đóng gói, nhiều phiên bản song song | web/SaaS, deploy liên tục |
+
+```bash
+git switch -c feat/search main      # nhánh ngắn hạn
+# ... commit nhỏ, mở PR sớm ...
+git merge --ff-only                 # hoặc squash merge vào main
+```
+
+- Trunk-based giấu tính năng chưa xong sau feature flag thay vì giữ trên nhánh riêng.
+- Nghiên cứu DORA liên hệ trunk-based với hiệu suất delivery cao.
+
+<Callout type="followup">
+Hỏi tiếp: GitHub Flow khác thế nào, và hotfix được xử lý ra sao trong mỗi mô hình?
+</Callout>

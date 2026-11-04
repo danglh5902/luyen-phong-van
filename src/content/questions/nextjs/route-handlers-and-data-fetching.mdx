@@ -1,0 +1,35 @@
+---
+title: "Data fetching trong App Router: khi nào fetch ở Server Component, khi nào dùng Route Handler?"
+topic: nextjs
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [data-fetching, route-handlers, parallel-fetching, suspense]
+answer: "Ưu tiên fetch/gọi DB trực tiếp trong Server Component (async/await), không cần API trung gian. Dùng Route Handler (route.ts) khi cần endpoint HTTP cho client ngoài, webhook hoặc proxy. Tránh waterfall bằng Promise.all hoặc tách thành các component riêng bọc Suspense."
+---
+```tsx
+// Waterfall: tuần tự, chậm
+const user = await getUser(id);
+const posts = await getPosts(id);
+
+// Song song
+const [user2, posts2] = await Promise.all([getUser(id), getPosts(id)]);
+```
+
+```ts
+// app/api/health/route.ts
+export async function GET() {
+  return Response.json({ ok: true });
+}
+```
+
+- Không gọi Route Handler của chính app từ Server Component: thừa một hop HTTP; hãy gọi thẳng hàm dùng chung.
+- Route Handler `GET`: Next 14 cache mặc định (static) nếu không dùng Dynamic API; Next 15 không cache mặc định (bật bằng `export const dynamic = 'force-static'`).
+- Mutation dùng Server Action; fetch phía client tương tác (polling, infinite scroll) dùng SWR hoặc TanStack Query.
+
+<Callout type="tip">
+Nhiều request giống nhau trong cùng một lần render (`fetch` GET cùng URL/options) được dedupe tự động (Request Memoization). Với truy vấn DB dùng `cache()` của React.
+</Callout>
+
+<Callout type="pitfall">
+Fetch dữ liệu rồi truyền xuống bằng props qua nhiều tầng là không cần thiết: component nào cần dữ liệu thì tự fetch, memoization lo phần trùng lặp.
+</Callout>

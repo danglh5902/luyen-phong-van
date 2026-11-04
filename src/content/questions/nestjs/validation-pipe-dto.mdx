@@ -1,0 +1,30 @@
+---
+title: "ValidationPipe, DTO và class-validator dùng thế nào? whitelist, transform để làm gì?"
+topic: nestjs
+roles: [backend, fullstack]
+level: junior
+tags: [pipe, dto, validation, class-validator]
+answer: "DTO là class mô tả dữ liệu vào, gắn decorator của class-validator; ValidationPipe validate theo DTO và trả 400 nếu sai. whitelist loại field không khai báo, forbidNonWhitelisted báo lỗi thay vì loại, transform ép payload thành instance DTO và kiểu primitive."
+---
+```ts
+export class CreateUserDto {
+  @IsEmail() email: string;
+  @IsString() @MinLength(8) password: string;
+  @IsOptional() @IsInt() @Min(0) age?: number;
+}
+
+// main.ts
+app.useGlobalPipes(new ValidationPipe({
+  whitelist: true,            // bỏ field thừa
+  forbidNonWhitelisted: true, // hoặc ném 400
+  transform: true,            // plain -> instance DTO, "5" -> 5 cho @Param
+}));
+```
+
+<Callout type="pitfall">
+DTO phải là class, không phải interface/type, vì interface mất đi lúc runtime nên decorator không có chỗ gắn. Với nested object cần `@ValidateNested()` kèm `@Type(() => Child)` của class-transformer.
+</Callout>
+
+<Callout type="tip">
+Bật `whitelist` để chặn mass assignment (client gửi thêm `isAdmin: true`).
+</Callout>

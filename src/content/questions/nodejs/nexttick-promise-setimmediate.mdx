@@ -1,0 +1,33 @@
+---
+title: "process.nextTick, Promise và setImmediate khác nhau thế nào?"
+topic: nodejs
+roles: [backend, fullstack]
+level: mid
+tags: [event-loop, nextTick, microtask, setImmediate]
+answer: "Sau thao tác hiện tại, Node chạy hàng đợi process.nextTick trước, rồi microtask của Promise, sau đó mới tới các pha event loop; setImmediate chạy ở pha check, setTimeout ở pha timers. nextTick đệ quy có thể làm đói I/O."
+---
+```js
+setTimeout(() => console.log("timeout"), 0);
+setImmediate(() => console.log("immediate"));
+Promise.resolve().then(() => console.log("promise"));
+process.nextTick(() => console.log("nextTick"));
+console.log("sync");
+// sync, nextTick, promise, rồi timeout/immediate (thứ tự 2 cái này không cố định)
+```
+
+| API | Hàng đợi | Chạy khi |
+|---|---|---|
+| `process.nextTick` | nextTick queue | Ngay sau thao tác hiện tại, trước mọi microtask |
+| `Promise.then`, `queueMicrotask` | microtask queue | Sau nextTick queue, trước khi sang pha tiếp theo |
+| `setTimeout` | timers | Pha timers khi hết hạn |
+| `setImmediate` | check | Pha check, ngay sau poll |
+
+Với CommonJS, nextTick được xả trước promise. Với ES module (code top-level chạy trong một promise job), promise có thể chạy trước nextTick.
+
+<Callout type="pitfall">
+Gọi `process.nextTick` đệ quy khiến queue không bao giờ rỗng nên event loop không tiến sang pha I/O (starvation). Muốn nhường loop thì dùng `setImmediate`.
+</Callout>
+
+<Callout type="tip">
+Dùng nextTick để đảm bảo callback luôn bất đồng bộ (ví dụ phát sự kiện sau khi caller kịp gắn listener). Code mới nên ưu tiên `queueMicrotask`.
+</Callout>

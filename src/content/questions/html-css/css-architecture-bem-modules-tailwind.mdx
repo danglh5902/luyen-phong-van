@@ -1,0 +1,35 @@
+---
+title: "So sánh BEM, CSS Modules, Tailwind và CSS-in-JS: chọn thế nào?"
+topic: html-css
+roles: [frontend, fullstack]
+level: senior
+tags: [architecture, bem, css-modules, tailwind, css-in-js]
+answer: "BEM là quy ước đặt tên, không có scope thật. CSS Modules scope class lúc build, zero runtime. Tailwind dùng utility class, nhất quán và bundle nhỏ nhưng markup dài. CSS-in-JS runtime cho style động theo props nhưng tốn runtime và khó với RSC; bản zero-runtime giảm nhược điểm này."
+---
+| Cách | Scope | Runtime | Điểm mạnh | Điểm yếu |
+|---|---|---|---|---|
+| BEM | Quy ước tên | Không | Đơn giản, không cần tool | Tên dài, dễ vi phạm |
+| CSS Modules | Hash class lúc build | Không | Cô lập, CSS thuần | Style động phải dùng biến CSS |
+| Tailwind | Utility class | Không | Design token nhất quán, purge nhỏ | HTML dài, học tập ban đầu |
+| CSS-in-JS runtime | Theo component | Có | Style theo props, co-location | Chi phí runtime, SSR/RSC phức tạp |
+
+```css
+/* BEM */
+.card__title--highlight { color: tomato; }
+```
+
+```html
+<!-- Tailwind -->
+<button class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">Lưu</button>
+```
+
+- Style động theo state với bất kỳ cách nào không runtime: dùng CSS variables hoặc `data-*`/`aria-*` attribute selector.
+- Lựa chọn dựa vào đội ngũ và hệ thống thiết kế: design system riêng thường chọn Modules + tokens; app sản phẩm nhanh thường chọn Tailwind.
+
+<Callout type="tip">
+Không loại trừ nhau: có thể dùng Tailwind cho layout/utility và CSS Modules cho component phức tạp. Quan trọng là một quy ước nhất quán trong team.
+</Callout>
+
+<Callout type="pitfall">
+CSS-in-JS runtime (như styled-components, Emotion) sinh style khi render, khiến hiệu năng hydration kém và không dùng được trong React Server Components.
+</Callout>

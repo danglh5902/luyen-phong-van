@@ -1,0 +1,30 @@
+---
+title: "Xử lý form phức tạp trong React: vì sao dùng react-hook-form (kèm Zod)?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [forms, react-hook-form, validation]
+answer: "react-hook-form dựa chủ yếu vào uncontrolled input + ref, nên hầu như không re-render theo từng phím; validation khai báo qua `register` hoặc schema (Zod/Yup qua resolver). Dùng `Controller` để bọc component controlled như Select của UI library."
+---
+```tsx
+const schema = z.object({ email: z.string().email(), age: z.coerce.number().min(18) });
+type Form = z.infer<typeof schema>;
+
+const { register, handleSubmit, formState: { errors, isSubmitting } } =
+  useForm<Form>({ resolver: zodResolver(schema) });
+
+<form onSubmit={handleSubmit(async (v) => { await save(v); })}>
+  <input {...register("email")} />
+  {errors.email && <span>{errors.email.message}</span>}
+  <button disabled={isSubmitting}>Gửi</button>
+</form>
+```
+
+- Ít re-render: chỉ subscribe phần cần dùng (`formState`, `watch`, `useWatch`).
+- `Controller`/`useController` cho component không expose `ref` input.
+- Dùng chung schema Zod cho client và server để validate hai phía.
+- `useFieldArray` cho danh sách field động.
+
+<Callout type="pitfall">
+`watch()` ở root làm cả form re-render mỗi lần đổi; ưu tiên `useWatch` ở component con. Luôn validate lại ở server, validation client chỉ phục vụ UX.
+</Callout>

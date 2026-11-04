@@ -1,0 +1,22 @@
+---
+title: "Khi nào component re-render? Dùng memo, useMemo, useCallback ra sao?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [performance, memo]
+answer: "Component re-render khi state/props đổi hoặc cha re-render. memo bỏ qua render nếu props không đổi (so sánh nông); useMemo/useCallback giữ ổn định giá trị/hàm để memo hiệu quả."
+---
+```jsx
+const Child = memo(({ onSave }) => <button onClick={onSave}>Save</button>);
+
+function Parent() {
+  const [n, setN] = useState(0);
+  // Không có useCallback: hàm mới mỗi lần render -> Child vẫn re-render
+  const onSave = useCallback(() => save(), []);
+  return <><button onClick={() => setN(n + 1)}>{n}</button><Child onSave={onSave} /></>;
+}
+```
+
+<Callout type="pitfall">
+Đừng memo hóa mọi thứ: chi phí so sánh cũng tốn. Đo bằng React Profiler rồi mới tối ưu.
+</Callout>

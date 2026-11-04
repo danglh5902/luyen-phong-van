@@ -1,0 +1,27 @@
+---
+title: "`this` trong JavaScript được xác định như thế nào?"
+topic: javascript
+roles: [frontend, fullstack]
+level: mid
+tags: [this, function]
+answer: "this được quyết định lúc gọi hàm (không phải lúc định nghĩa), trừ arrow function: nó lấy this của scope bao ngoài."
+---
+import Runnable from "../../../components/Runnable";
+
+Thứ tự: `new` > `call/apply/bind` > gọi như method (`obj.fn()`) > mặc định (`undefined` ở strict mode).
+
+<Runnable client:visible lang="js" code={`const user = {
+  name: 'An',
+  regular() { return this.name; },
+  arrow: () => typeof this,
+  delayed() { return [1].map(() => this.name); }, // arrow giữ this của delayed
+};
+console.log(user.regular());   // An
+const f = user.regular;
+try { console.log(f()); } catch (e) { console.log('mất this:', e.name); }
+console.log(user.arrow());     // không phải user
+console.log(user.delayed());   // ['An']`} />
+
+<Callout type="pitfall">
+Truyền method làm callback (`btn.onclick = obj.method`) sẽ mất `this`. Dùng `.bind(obj)` hoặc arrow function.
+</Callout>

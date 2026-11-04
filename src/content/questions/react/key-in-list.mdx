@@ -1,0 +1,19 @@
+---
+title: "Vì sao list trong React cần `key`? Có nên dùng index làm key?"
+topic: react
+roles: [frontend, fullstack]
+level: junior
+tags: [list, reconciliation]
+answer: "key giúp React nhận diện phần tử nào thêm/xóa/đổi chỗ khi reconcile. Không nên dùng index nếu list có thể thay đổi thứ tự vì state và DOM sẽ bị gán nhầm item."
+---
+```jsx
+// ❌ index: xóa item đầu, input của item sau nhận nhầm state
+items.map((it, i) => <Row key={i} item={it} />)
+
+// ✅ id ổn định, duy nhất
+items.map((it) => <Row key={it.id} item={it} />)
+```
+
+<Callout type="tip">
+Index chỉ chấp nhận được với list tĩnh: không sắp xếp, không lọc, không thêm/xóa giữa chừng.
+</Callout>

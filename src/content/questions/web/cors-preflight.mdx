@@ -1,0 +1,33 @@
+---
+title: "CORS là gì? Preflight request hoạt động ra sao?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [cors, same-origin-policy, preflight, security]
+answer: "Same-origin policy chặn JS đọc response cross-origin; CORS là cơ chế server dùng header Access-Control-* để cho phép. Với request không đơn giản (method khác GET/POST/HEAD, header tùy chỉnh, JSON content-type), trình duyệt gửi OPTIONS preflight trước để hỏi server có cho phép không."
+---
+```http
+OPTIONS /api/items HTTP/1.1
+Origin: https://app.example.com
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: content-type, authorization
+
+HTTP/1.1 204 No Content
+Access-Control-Allow-Origin: https://app.example.com
+Access-Control-Allow-Methods: GET, PUT
+Access-Control-Allow-Headers: content-type, authorization
+Access-Control-Allow-Credentials: true
+Access-Control-Max-Age: 600
+```
+
+- Origin = scheme + host + port; chỉ cần khác một thành phần là cross-origin.
+- Gửi cookie cần `credentials: "include"` ở client và `Allow-Credentials: true` ở server; khi đó `Allow-Origin` không được là `*`.
+- `Access-Control-Max-Age` cache kết quả preflight, giảm số request.
+
+<Callout type="pitfall">
+CORS do trình duyệt thực thi, không phải bảo vệ server: curl hay server khác vẫn gọi được API. Request vẫn đến server (với simple request), CORS chỉ chặn JS đọc kết quả, nên không thay thế auth hay CSRF protection.
+</Callout>
+
+<Callout type="tip">
+Lỗi CORS thường do server không trả header, hoặc preflight trả 4xx/redirect. Dùng proxy dev server hoặc cấu hình whitelist origin phía backend.
+</Callout>

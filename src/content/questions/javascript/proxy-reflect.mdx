@@ -1,0 +1,46 @@
+---
+title: "Proxy và Reflect là gì? Ứng dụng và hạn chế"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [proxy, reflect, metaprogramming, reactivity]
+answer: "`Proxy` bọc một object và chặn thao tác cơ bản (get, set, has, deleteProperty, ownKeys, apply...) qua các trap. `Reflect` cung cấp phiên bản mặc định của các thao tác đó, dùng trong trap để giữ đúng ngữ nghĩa. Ứng dụng: reactivity (Vue 3), validation, logging, default value."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`const target = { a: 1 };
+const log = [];
+const p = new Proxy(target, {
+  get(t, key, receiver) {
+    log.push("get " + String(key));
+    return Reflect.get(t, key, receiver);
+  },
+  set(t, key, value, receiver) {
+    if (typeof value !== "number") throw new TypeError("number only");
+    return Reflect.set(t, key, value, receiver);
+  },
+});
+p.b = 2;
+console.log(p.a + p.b, log);
+try { p.c = "x"; } catch (e) { console.log(e.message); }
+console.log(p === target, target.b);`} />
+
+- Trap `set` phải trả `true` nếu thành công; ở strict mode trả falsy sẽ ném `TypeError`.
+- Dùng `Reflect.*` với `receiver` để getter/setter kế thừa và `this` hoạt động đúng.
+- Có invariant: trap không được nói dối về property non-configurable, nếu không sẽ ném lỗi.
+
+## Hạn chế
+
+- Chậm hơn truy cập trực tiếp, khó tối ưu; không nên đặt ở hot path.
+- Proxy khác danh tính với target (`p !== target`); `Map`, `Set`, `Date` và private field `#x` dựa vào internal slot nên gọi method qua proxy bị `TypeError` nếu không bind lại.
+- Không polyfill được hoàn toàn (nên Vue 3 bỏ IE11).
+
+<Callout type="pitfall">
+Trong trap `get`, trả `t[key]` thay vì `Reflect.get(t, key, receiver)` làm sai `this` của getter. Và nhớ proxy nested: chỉ proxy cấp một, object lồng nhau cần bọc lazily trong `get`.
+</Callout>
+
+<Callout type="followup">
+So sánh reactivity của Vue 3 (Proxy) với Vue 2 (`Object.defineProperty`): Proxy bắt được thêm/xóa property và index mảng, không cần `$set`.
+</Callout>

@@ -1,0 +1,36 @@
+---
+title: "enum và const object (as const) khác nhau thế nào? Nên dùng cái nào?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [enum, as-const, union]
+answer: "`enum` tạo ra code runtime (numeric enum còn có reverse mapping), còn string-literal union hoặc `const` object + `as const` chỉ là type, không thêm gì vào bundle. Hiện nay thường ưu tiên const object/union vì tương thích với tooling chỉ xóa type và dễ debug."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="ts" code={`const Status = { Active: "active", Inactive: "inactive" } as const;
+type Status = (typeof Status)[keyof typeof Status]; // "active" | "inactive"
+
+function label(s: Status) { return s.toUpperCase(); }
+console.log(label(Status.Active), Object.values(Status));
+
+enum Dir { Up, Down }
+console.log(Dir.Up, Dir[0], Object.keys(Dir));  // reverse mapping`} />
+
+| | `enum` | const object + `as const` |
+|---|---|---|
+| Code runtime | có (IIFE) | object thường |
+| Reverse mapping | có (numeric) | không |
+| Nhận string literal thô | không (`"active"` không gán được cho string enum) | có |
+| Chỉ xóa type (Babel, esbuild, Node strip types) | `enum` cần transform | tương thích |
+| Tree shaking | kém hơn | tốt |
+
+<Callout type="pitfall">
+Numeric enum nhận mọi giá trị kiểu `number` (biến `number` gán được cho enum), nên kiểm tra khá lỏng. `const enum` bị inline nhưng gây rắc rối với `isolatedModules` và thư viện publish; tránh dùng trong library.
+</Callout>
+
+<Callout type="followup">
+Vì sao Node.js type stripping và flag `erasableSyntaxOnly` không cho dùng `enum`? (Vì enum sinh code runtime, không phải cú pháp chỉ-type.)
+</Callout>

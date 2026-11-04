@@ -1,0 +1,39 @@
+---
+title: "Event bubbling, capturing và event delegation là gì?"
+topic: javascript
+roles: [frontend, fullstack]
+level: mid
+tags: [dom, events, bubbling, delegation]
+answer: "Sự kiện DOM đi qua 3 pha: capturing (từ window xuống target), target, rồi bubbling (từ target lên). Event delegation gắn một listener ở phần tử cha và dựa vào `event.target` để xử lý con, giúp ít listener hơn và hoạt động với phần tử thêm động."
+---
+
+## Ba pha
+
+1. **Capturing**: từ `window` xuống phần tử đích (chỉ bắt được với `{ capture: true }`).
+2. **Target**: tại phần tử đích.
+3. **Bubbling**: từ đích lên ngược `window`. Mặc định `addEventListener` lắng nghe ở pha này.
+
+## Delegation
+
+```js
+list.addEventListener("click", (e) => {
+  const item = e.target.closest("li[data-id]");
+  if (!item || !list.contains(item)) return;
+  console.log("clicked", item.dataset.id);
+});
+```
+
+- `e.target`: phần tử thật sự bị click; `e.currentTarget`: phần tử đang gắn listener.
+- Dùng `closest()` để xử lý khi click vào phần tử con bên trong (icon, span).
+
+<Callout type="pitfall">
+Không phải sự kiện nào cũng bubble: `focus`, `blur`, `mouseenter`, `scroll` (trên element) không bubble. Dùng `focusin`/`focusout` thay cho delegation focus. `stopPropagation()` làm hỏng delegation của listener ở tầng trên và analytics.
+</Callout>
+
+<Callout type="tip">
+`stopPropagation` chặn lan truyền, còn `preventDefault` chặn hành vi mặc định (submit form, theo link); hai việc độc lập. React 17+ gắn listener ở root container thay vì `document`.
+</Callout>
+
+<Callout type="followup">
+`{ once: true }` và `{ passive: true }` trong `addEventListener` làm gì? (Passive báo trình duyệt không gọi `preventDefault`, giúp scroll mượt hơn.)
+</Callout>

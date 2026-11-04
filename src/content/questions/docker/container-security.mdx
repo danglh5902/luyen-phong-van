@@ -1,0 +1,30 @@
+---
+title: "Các biện pháp bảo mật container quan trọng"
+topic: docker
+roles: [backend, devops]
+level: senior
+tags: [security, non-root, scan, capabilities]
+answer: "Chạy bằng user không phải root, dùng base image nhỏ và pin phiên bản, scan lỗ hổng image (Trivy, Grype), bỏ capability thừa, filesystem read-only, không dùng --privileged, không mount docker.sock, không nhúng secret vào image, và cập nhật image thường xuyên."
+---
+```dockerfile
+FROM gcr.io/distroless/nodejs20-debian12
+WORKDIR /app
+COPY --chown=nonroot:nonroot . .
+USER nonroot
+CMD ["server.js"]
+```
+
+```bash
+docker run --read-only --tmpfs /tmp \
+  --cap-drop ALL --security-opt no-new-privileges \
+  --user 10001:10001 myapp
+trivy image myapp:1.0     # scan CVE
+```
+
+- Root trong container vẫn là uid 0 trên host nếu có lỗ hổng thoát container; user namespace/rootless giảm rủi ro.
+- Mount `/var/run/docker.sock` cho container tương đương cấp root trên host.
+- Ký image (cosign) và chỉ chạy image từ registry tin cậy.
+
+<Callout type="pitfall">
+`--privileged` gần như tắt toàn bộ cô lập (mọi capability, truy cập device của host). Hầu như luôn có cách thay thế hẹp hơn như `--cap-add` đúng một capability.
+</Callout>

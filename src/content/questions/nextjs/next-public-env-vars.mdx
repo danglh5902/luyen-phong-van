@@ -1,0 +1,27 @@
+---
+title: "Biến môi trường NEXT_PUBLIC_ khác biến thường như thế nào? Có thể đổi lúc runtime không?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: junior
+tags: [env, security, build-time]
+answer: "Biến có tiền tố NEXT_PUBLIC_ được inline thẳng vào JS bundle của client lúc build, nên ai cũng đọc được và giá trị bị đóng băng sau build. Biến không có tiền tố chỉ tồn tại ở server (process.env lúc runtime) và là nơi để đặt secret."
+---
+```ts
+// Server (Server Component, Route Handler, Server Action): đọc được cả hai
+const secret = process.env.DATABASE_URL;
+
+// Client Component: chỉ NEXT_PUBLIC_ có giá trị, còn lại là undefined
+const api = process.env.NEXT_PUBLIC_API_URL;
+```
+
+- Next thay thế `process.env.NEXT_PUBLIC_X` bằng chuỗi literal lúc build. Cùng một image Docker không đổi được giá trị theo môi trường, phải build lại hoặc dùng cấu hình runtime (ví dụ lấy từ server).
+- Truy cập động như `process.env[name]` không được inline ở client.
+- Thứ tự file: `.env.local` ghi đè `.env`; `.env.local` không commit.
+
+<Callout type="pitfall">
+Không bao giờ đặt secret (API key riêng tư, DB URL) vào biến `NEXT_PUBLIC_`. Nó sẽ lộ trong bundle.
+</Callout>
+
+<Callout type="tip">
+Muốn chắc chắn module chỉ chạy ở server, import `server-only` ở đầu file để build báo lỗi nếu Client Component import nhầm.
+</Callout>

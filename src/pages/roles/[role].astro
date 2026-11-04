@@ -1,0 +1,57 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+import { roles, roleMap } from '../../data/roles';
+import { topicMap } from '../../data/topics';
+import { levels, goals, buildTrack, trackCount, roleTopics } from '../../data/tracks';
+
+export function getStaticPaths() {
+  return roles.map((r) => ({ params: { role: r.id } }));
+}
+const { role: id } = Astro.params;
+const role = roleMap[id!];
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const all = await getCollection('questions');
+const levelColor = { junior: '#10b981', mid: '#f59e0b', senior: '#e11d48' } as const;
+---
+<BaseLayout title={role.name}>
+  <a href={`${base}/`} class="text-sm font-medium text-indigo-600 hover:underline">← Trang chủ</a>
+  <header class="relative mt-4 overflow-hidden rounded-3xl border border-slate-200 p-8 dark:border-white/10" style={`--accent:${role.color}`}>
+    <div class="absolute inset-0 -z-10 opacity-20" style="background:radial-gradient(500px 220px at 0% 0%, var(--accent), transparent 70%)"></div>
+    <div class="flex items-center gap-5">
+      <div class="tile h-16 w-16 text-3xl">{role.icon}</div>
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">{role.name}</h1>
+        <p class="mt-1 text-slate-500">{role.desc}. Chọn cấp độ bạn đang nhắm tới.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="mt-8 grid gap-4 md:grid-cols-3">
+    {levels.map((l) => {
+      const sections = buildTrack(role.id, l.id, all);
+      return (
+        <a href={`${base}/paths/${role.id}/${l.id}/`} style={`--accent:${levelColor[l.id]}`} class="card group flex flex-col p-6">
+          <span class="text-xs font-bold uppercase tracking-widest text-[var(--accent)]">{l.name}</span>
+          <h2 class="mt-1 text-xl font-bold text-slate-900 dark:text-white">{l.name} {role.name}</h2>
+          <p class="mt-1 text-sm text-slate-500">{l.sub}</p>
+          <ul class="mt-4 space-y-1.5 text-sm text-slate-600 dark:text-slate-400">
+            {goals[role.id][l.id].slice(0, 3).map((g) => <li class="flex gap-2"><span class="text-[var(--accent)]">✓</span><span>{g}</span></li>)}
+          </ul>
+          <p class="mt-auto pt-5 text-sm font-semibold text-[var(--accent)]">{trackCount(sections)} câu · {sections.length} chủ đề <span class="inline-block transition group-hover:translate-x-1">→</span></p>
+        </a>
+      );
+    })}
+  </div>
+
+  <section class="mt-10">
+    <h2 class="mb-3 text-sm font-bold uppercase tracking-widest text-slate-400">Chủ đề liên quan tới vị trí này</h2>
+    <div class="flex flex-wrap gap-2">
+      {roleTopics[role.id].map(({ topic }) => (
+        <a href={`${base}/topics/${topic}/`} style={`--accent:${topicMap[topic].color}`} class="chip hover:border-[var(--accent)]">
+          <i class="h-2 w-2 rounded-full bg-[var(--accent)]"></i>{topicMap[topic].name}
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

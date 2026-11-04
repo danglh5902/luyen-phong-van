@@ -1,0 +1,34 @@
+---
+title: "Thiết kế REST API: status code, idempotency, pagination"
+topic: nodejs
+roles: [backend, fullstack]
+level: mid
+tags: [rest, api-design, idempotency, pagination, http]
+answer: "REST dùng danh từ số nhiều cho resource, method đúng ngữ nghĩa và status code chính xác (201, 204, 400, 401, 403, 404, 409, 422, 429). GET/PUT/DELETE idempotent, POST thì không (dùng Idempotency-Key). Phân trang bằng offset hoặc cursor; cursor ổn định hơn với dữ liệu lớn."
+---
+| Code | Dùng khi |
+|---|---|
+| 200 / 201 / 204 | OK / tạo mới (kèm `Location`) / thành công không có body |
+| 400 / 422 | Request sai cú pháp / sai nghiệp vụ, validation |
+| 401 / 403 | Chưa xác thực / không đủ quyền |
+| 404 / 409 | Không tìm thấy / xung đột (trùng, version) |
+| 429 | Vượt rate limit (kèm `Retry-After`) |
+| 500 / 503 | Lỗi server / quá tải, bảo trì |
+
+Idempotent nghĩa là gọi N lần cho cùng kết quả trạng thái như gọi 1 lần: `GET`, `PUT`, `DELETE` có tính này; `POST` thì không, nên client có thể gửi header `Idempotency-Key` để server loại bỏ yêu cầu trùng (thanh toán, tạo đơn khi retry).
+
+Pagination:
+- Offset: `?page=3&limit=20` (SQL `OFFSET`) dễ làm nhưng chậm khi offset lớn và lệch khi dữ liệu thêm/xóa.
+- Cursor: `?after=<id>&limit=20` dựa trên khóa đã sắp xếp (`WHERE id > :after`), nhanh và ổn định.
+
+```js
+app.get("/orders", async (req, res) => {
+  const limit = Math.min(Number(req.query.limit) || 20, 100); // chặn trần
+  const rows = await db.orders.after(req.query.after, limit + 1);
+  res.json({ data: rows.slice(0, limit), next: rows.length > limit ? rows[limit - 1].id : null });
+});
+```
+
+<Callout type="tip">
+Versioning (`/v1/`), định dạng lỗi thống nhất (`code`, `message`, `details`), và `PATCH` cho cập nhật một phần giúp API dễ bảo trì.
+</Callout>

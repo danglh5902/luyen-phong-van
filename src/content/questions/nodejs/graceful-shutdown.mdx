@@ -1,0 +1,33 @@
+---
+title: "Graceful shutdown trong Node.js (SIGTERM) làm thế nào?"
+topic: nodejs
+roles: [backend, fullstack]
+level: mid
+tags: [graceful-shutdown, SIGTERM, kubernetes, http]
+answer: "Khi nhận SIGTERM: ngừng nhận kết nối mới (server.close), chờ request đang xử lý xong, đóng DB/queue, rồi thoát; đặt timeout cưỡng bức để không treo. Nhờ vậy deploy/scale-down không làm rớt request."
+---
+```js
+const server = app.listen(3000);
+
+async function shutdown(signal) {
+  console.log(signal, "nhận được, đang tắt...");
+  const force = setTimeout(() => process.exit(1), 10_000);
+  force.unref();                       // timer không giữ process sống
+  server.close(async () => {           // xong khi hết kết nối
+    await db.end();
+    process.exit(0);
+  });
+  server.closeIdleConnections?.();     // Node 18.2+: đóng keep-alive nhàn rỗi
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));
+```
+
+- Orchestrator (Kubernetes, Docker) gửi SIGTERM, hết `terminationGracePeriodSeconds` (mặc định 30s) mới SIGKILL (không bắt được).
+- Chuyển readiness probe sang fail trước để load balancer ngừng gửi traffic mới.
+- `server.close()` chỉ đóng listener; keep-alive connection còn mở sẽ giữ callback chờ, nên cần đóng các kết nối nhàn rỗi.
+- Chạy `node app.js` trực tiếp làm PID 1 (không qua `npm start`/shell) để tín hiệu đến được app.
+
+<Callout type="pitfall">
+`npm start` hoặc shell wrapper có thể không chuyển tiếp SIGTERM tới Node. Dùng `CMD ["node", "app.js"]` dạng exec trong Dockerfile.
+</Callout>

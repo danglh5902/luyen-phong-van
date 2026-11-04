@@ -1,0 +1,39 @@
+---
+title: "Lifecycle hooks trong NestJS và graceful shutdown (OnModuleInit, OnApplicationShutdown)"
+topic: nestjs
+roles: [backend, fullstack]
+level: senior
+tags: [lifecycle, shutdown, hooks, kubernetes]
+answer: "Nest có hook OnModuleInit, OnApplicationBootstrap khi khởi động và OnModuleDestroy, BeforeApplicationShutdown, OnApplicationShutdown khi tắt. Shutdown hook mặc định tắt, phải gọi app.enableShutdownHooks() để Nest lắng nghe SIGTERM và chạy dọn dẹp (đóng DB, queue, drain request)."
+---
+Thứ tự:
+
+| Giai đoạn | Hook |
+|---|---|
+| Khởi động | `onModuleInit` → `onApplicationBootstrap` |
+| Tắt | `onModuleDestroy` → `beforeApplicationShutdown(signal)` → `onApplicationShutdown(signal)` |
+
+```ts
+// main.ts
+const app = await NestFactory.create(AppModule);
+app.enableShutdownHooks();          // lắng nghe SIGTERM/SIGINT
+await app.listen(3000);
+
+@Injectable()
+export class QueueService implements OnModuleInit, OnApplicationShutdown {
+  async onModuleInit() { await this.client.connect(); }
+  async onApplicationShutdown(signal?: string) {
+    await this.worker.close();      // chờ job đang chạy hoàn tất
+    await this.client.quit();
+  }
+}
+```
+
+- Kubernetes gửi SIGTERM, đợi `terminationGracePeriodSeconds` rồi SIGKILL; app cần dừng nhận request mới, hoàn tất request đang chạy, rồi đóng tài nguyên.
+- Hook async: Nest chờ `Promise` hoàn tất trước khi sang hook tiếp.
+- `onModuleInit` chạy theo thứ tự phụ thuộc module; nên dùng cho khởi tạo nặng thay vì constructor (constructor không `await` được).
+- Kết hợp readiness probe (Terminus) trả không-sẵn-sàng ngay khi bắt đầu shutdown để LB ngừng gửi traffic.
+
+<Callout type="pitfall">
+Quên `enableShutdownHooks()` thì `onApplicationShutdown` không chạy khi nhận SIGTERM, dẫn đến connection DB/queue bị cắt đột ngột và job dở dang. Hook này làm tăng listener, nên cẩn thận khi chạy nhiều test app trong một process.
+</Callout>

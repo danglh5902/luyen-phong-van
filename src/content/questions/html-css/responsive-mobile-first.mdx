@@ -1,0 +1,29 @@
+---
+title: "Responsive design: mobile-first, media query, `clamp()` và container query"
+topic: html-css
+roles: [frontend, fullstack]
+level: mid
+tags: [responsive, media-query, clamp, container-queries]
+answer: "Mobile-first viết CSS cơ bản cho màn nhỏ rồi mở rộng bằng min-width media query. clamp(min, giá trị linh hoạt, max) giúp font/spacing co giãn mượt. Container query cho component đổi layout theo kích thước container thay vì viewport."
+---
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+```
+
+```css
+.grid { display: grid; gap: 12px; }
+@media (min-width: 768px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+h1 { font-size: clamp(1.5rem, 1rem + 2vw, 3rem); }
+
+.card-wrap { container-type: inline-size; }
+@container (min-width: 400px) { .card { display: flex; } }
+```
+
+- Mobile-first: ít override, tải nhẹ cho thiết bị yếu.
+- Media query theo viewport; container query theo container nên component tái sử dụng được ở sidebar hay main.
+- Có thể dùng `prefers-reduced-motion`, `hover: hover` để thích ứng thiết bị và người dùng.
+
+<Callout type="pitfall">
+Thiếu thẻ `meta viewport`, mobile sẽ render ở bề rộng khoảng 980px rồi thu nhỏ, khiến media query không như mong đợi.
+</Callout>

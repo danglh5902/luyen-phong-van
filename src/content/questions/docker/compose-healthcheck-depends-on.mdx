@@ -1,0 +1,32 @@
+---
+title: "Docker Compose: healthcheck và depends_on hoạt động ra sao?"
+topic: docker
+roles: [backend, fullstack, devops]
+level: mid
+tags: [compose, healthcheck, depends_on, startup-order]
+answer: "depends_on mặc định chỉ đảm bảo thứ tự khởi động container, không chờ dịch vụ sẵn sàng. Kết hợp healthcheck với depends_on điều kiện service_healthy để service phụ thuộc chỉ chạy khi dependency báo healthy."
+---
+```yaml
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: example
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+```
+
+- `condition` có `service_started` (mặc định), `service_healthy`, `service_completed_successfully` (dùng cho job migrate chạy một lần).
+- Healthcheck chạy bên trong container, nên image phải có lệnh kiểm tra (`pg_isready`, `curl`...).
+
+<Callout type="pitfall">
+Ngay cả khi healthy lúc khởi động, DB vẫn có thể sập sau đó: app vẫn cần retry kết nối với backoff.
+</Callout>

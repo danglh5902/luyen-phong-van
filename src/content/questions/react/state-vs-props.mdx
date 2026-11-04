@@ -1,0 +1,19 @@
+---
+title: "State và props khác nhau thế nào?"
+topic: react
+roles: [frontend, fullstack]
+level: junior
+tags: [state, props]
+answer: "Props là dữ liệu cha truyền xuống (chỉ đọc); state là dữ liệu nội bộ component tự quản lý và thay đổi bằng setter, thay đổi sẽ gây re-render."
+---
+```jsx
+function Counter({ step }) {          // props: step (chỉ đọc)
+  const [n, setN] = useState(0);      // state: n (tự quản lý)
+  return <button onClick={() => setN(n + step)}>{n}</button>;
+}
+<Counter step={2} />
+```
+
+<Callout type="pitfall">
+Không mutate state trực tiếp (`arr.push`). Luôn tạo bản sao: `setArr([...arr, x])`.
+</Callout>

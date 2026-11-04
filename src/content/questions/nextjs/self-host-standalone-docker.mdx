@@ -1,0 +1,37 @@
+---
+title: "Deploy Next.js: Vercel khác self-host thế nào? Output standalone và Docker?"
+topic: nextjs
+roles: [fullstack]
+level: senior
+tags: [deployment, docker, standalone]
+answer: "Vercel hỗ trợ sẵn ISR, Image Optimization, Edge/Middleware. Self-host dùng `next start` hoặc `output: \"standalone\"` để tạo `server.js` kèm đúng các dependency cần thiết, đóng gói Docker nhỏ gọn. Cần tự lo cache dùng chung giữa các instance, CDN cho `_next/static` và biến môi trường."
+---
+```js
+// next.config.js
+module.exports = { output: "standalone" };
+```
+
+```dockerfile
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY . .
+RUN npm ci && npm run build
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+CMD ["node", "server.js"]
+```
+
+Lưu ý khi self-host:
+- `standalone` không tự copy `public/` và `.next/static`; phải copy thủ công (hoặc đẩy lên CDN).
+- Nhiều instance: cache ISR/Data Cache mặc định nằm trên filesystem từng instance, nên cần `cacheHandler` (Redis) để đồng bộ revalidate.
+- Image Optimization chạy trên server, cần cài `sharp` (có sẵn khi dùng standalone ở Next 15) và giới hạn tài nguyên.
+- Biến `NEXT_PUBLIC_*` được nhúng lúc build; biến server đọc lúc runtime.
+- Sau reverse proxy cần chuyển `Host`/`X-Forwarded-*` và tắt buffering để streaming hoạt động.
+- Đặt `HOSTNAME=0.0.0.0` khi chạy trong container.
+
+<Callout type="followup">
+Triển khai không Node: `output: "export"` tạo site tĩnh hoàn toàn, nhưng mất ISR, Server Actions, Middleware, Image Optimization mặc định.
+</Callout>

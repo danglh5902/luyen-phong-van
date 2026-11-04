@@ -1,0 +1,36 @@
+---
+title: "after() và instrumentation.ts dùng để làm gì trong Next.js?"
+topic: nextjs
+roles: [fullstack]
+level: senior
+tags: [after, instrumentation, observability]
+answer: "`after()` (stable từ Next 15.1) lên lịch chạy code sau khi response đã gửi xong, phù hợp logging, analytics mà không làm chậm người dùng. `instrumentation.ts` export `register()` chạy một lần khi server khởi động để cắm monitoring như OpenTelemetry hoặc Sentry."
+---
+```ts
+// app/api/order/route.ts
+import { after } from "next/server";
+
+export async function POST(req: Request) {
+  const order = await createOrder(await req.json());
+  after(async () => {
+    await analytics.track("order_created", order.id); // chạy sau khi gửi response
+  });
+  return Response.json(order);
+}
+
+// instrumentation.ts (gốc dự án hoặc src/)
+export async function register() {
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("./instrumentation-node"); // khởi tạo OpenTelemetry/Sentry
+  }
+}
+```
+
+- `after` dùng được trong Server Component, Server Action, Route Handler, Middleware; nó không làm response đợi, nhưng nền tảng serverless phải giữ function sống (dùng `waitUntil`).
+- Trong `after` có thể đọc `headers()`/`cookies()` nếu gọi ngay trong scope request (không phải trong callback trong Server Component).
+- `instrumentation.ts` bật mặc định ở Next 15 (trước đó cần `experimental.instrumentationHook`); kiểm tra `NEXT_RUNTIME` vì có cả Edge.
+- Còn có `onRequestError` để báo lỗi server về dịch vụ theo dõi.
+
+<Callout type="pitfall">
+Lỗi trong `after` không ảnh hưởng response nhưng cũng dễ bị nuốt; phải tự `try/catch` và ghi log.
+</Callout>

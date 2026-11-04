@@ -1,0 +1,35 @@
+---
+title: "map, filter, reduce dùng thế nào? Method nào của Array làm thay đổi mảng gốc?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [array, functional, immutability]
+answer: "`map` biến đổi từng phần tử, `filter` lọc, `reduce` gộp thành một giá trị; cả ba không đổi mảng gốc. Method mutating gồm `push`, `pop`, `splice`, `sort`, `reverse`, `fill`; bản không mutate là `toSorted`, `toReversed`, `toSpliced`, `with` (ES2023)."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`const nums = [3, 1, 2];
+const sorted = [...nums].sort((a, b) => a - b); // copy rồi mới sort
+console.log(nums, sorted);
+console.log(nums.map((n) => n * 2));
+console.log(nums.filter((n) => n > 1));
+console.log(nums.reduce((acc, n) => acc + n, 0));
+console.log([10, 9, 1].sort()); // sort mặc định so sánh chuỗi`} />
+
+## Mutating hay không
+
+| Mutating (đổi mảng gốc) | Không mutate |
+|---|---|
+| `push`, `pop`, `shift`, `unshift` | `concat`, `slice`, spread |
+| `splice`, `sort`, `reverse`, `fill` | `map`, `filter`, `reduce`, `flat` |
+| | `toSorted`, `toReversed`, `toSpliced`, `with` |
+
+<Callout type="pitfall">
+`sort()` không có comparator sắp xếp theo chuỗi (UTF-16), nên `[10, 9, 1]` thành `[1, 10, 9]`. Luôn truyền `(a, b) => a - b` cho số. Và `reduce` trên mảng rỗng mà không có giá trị khởi tạo sẽ ném `TypeError`.
+</Callout>
+
+<Callout type="tip">
+Trong React/Redux, tránh mutate state: dùng spread hoặc các method không mutate.
+</Callout>

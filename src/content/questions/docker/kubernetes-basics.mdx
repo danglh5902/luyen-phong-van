@@ -1,0 +1,38 @@
+---
+title: "Kubernetes cơ bản: Pod, Deployment, Service"
+topic: docker
+roles: [backend, devops]
+level: senior
+tags: [kubernetes, pod, deployment, service]
+answer: "Pod là đơn vị chạy nhỏ nhất, gồm một hay nhiều container chia sẻ network và volume. Deployment quản lý ReplicaSet để giữ số bản sao mong muốn và rolling update. Service cấp IP/DNS ổn định và cân bằng tải tới các Pod chọn bằng label."
+---
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: web }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: web } }
+  template:
+    metadata: { labels: { app: web } }
+    spec:
+      containers:
+        - name: web
+          image: myapp:1.0
+          readinessProbe: { httpGet: { path: /healthz, port: 8080 } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: web }
+spec:
+  selector: { app: web }
+  ports: [{ port: 80, targetPort: 8080 }]
+```
+
+- Pod là tạm thời, IP đổi khi tạo lại nên cần Service.
+- Loại Service: ClusterIP (nội bộ), NodePort, LoadBalancer; Ingress định tuyến HTTP.
+- `readinessProbe` quyết định Pod có nhận traffic không; `livenessProbe` quyết định có restart không.
+
+<Callout type="followup">
+Hỏi tiếp: rolling update, rollback (`kubectl rollout undo`), HPA, ConfigMap/Secret, StatefulSet khác Deployment thế nào?
+</Callout>

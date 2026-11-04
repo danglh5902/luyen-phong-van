@@ -1,0 +1,28 @@
+---
+title: "Rate limiting: token bucket và các thuật toán khác"
+topic: system-design
+roles: [backend, devops]
+level: mid
+tags: [rate-limiting, token-bucket, redis, api]
+answer: "Rate limiting giới hạn số request mỗi client theo thời gian để chống lạm dụng. Token bucket: xô chứa tối đa N token, nạp r token/giây, mỗi request lấy một token; cho phép burst. Các lựa chọn khác: leaky bucket, fixed window, sliding window log/counter."
+---
+| Thuật toán | Ưu | Nhược |
+|---|---|---|
+| Fixed window | đơn giản | burst gấp đôi ở ranh giới cửa sổ |
+| Sliding window log | chính xác | tốn bộ nhớ |
+| Sliding window counter | cân bằng | xấp xỉ |
+| Token bucket | cho phép burst, rẻ | cần tinh chỉnh capacity/rate |
+| Leaky bucket | đầu ra đều | không burst |
+
+```text
+tokens = min(capacity, tokens + (now - last) * rate)
+if tokens >= 1: tokens -= 1; allow
+else: reject (HTTP 429 + Retry-After)
+```
+
+- Phân tán: lưu bộ đếm ở Redis, dùng Lua script để thao tác atomic.
+- Khoá theo user id, API key hoặc IP; trả header `X-RateLimit-Remaining`, `Retry-After`.
+
+<Callout type="pitfall">
+Đặt limiter ở API gateway/edge để chặn sớm. Giới hạn theo IP có thể chặn nhầm nhiều người sau cùng NAT.
+</Callout>

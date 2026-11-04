@@ -1,0 +1,43 @@
+---
+title: "Transaction trong NestJS với TypeORM: DataSource, QueryRunner và repository pattern"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [typeorm, transaction, repository, queryrunner]
+answer: "Dùng dataSource.transaction(async manager => ...) hoặc QueryRunner (connect, startTransaction, commit/rollback, release) và thao tác qua manager/queryRunner.manager cùng một connection. Gọi repository inject sẵn sẽ nằm ngoài transaction. Quên release() sẽ leak connection."
+---
+```ts
+@Injectable()
+export class OrdersService {
+  constructor(private dataSource: DataSource) {}
+
+  async checkout(userId: number, items: Item[]) {
+    return this.dataSource.transaction(async (manager) => {
+      const order = await manager.save(Order, { userId });
+      for (const i of items) {
+        await manager.decrement(Stock, { sku: i.sku }, 'qty', i.qty);
+        await manager.save(OrderItem, { orderId: order.id, ...i });
+      }
+      return order;          // lỗi ném ra thì tự rollback
+    });
+  }
+}
+```
+
+QueryRunner cho kiểm soát thủ công:
+
+```ts
+const qr = this.dataSource.createQueryRunner();
+await qr.connect(); await qr.startTransaction();
+try { /* qr.manager.save(...) */ await qr.commitTransaction(); }
+catch (e) { await qr.rollbackTransaction(); throw e; }
+finally { await qr.release(); }
+```
+
+- `this.userRepo.save()` (repository inject) dùng connection khác, không thuộc transaction; phải dùng `manager.getRepository(User)`.
+- Muốn service không phụ thuộc DataSource, bọc bằng unit-of-work hoặc dùng thư viện như `typeorm-transactional` (dựa trên AsyncLocalStorage).
+- Chọn isolation level phù hợp (`'SERIALIZABLE'`, v.v.) và lock (`pessimistic_write`) khi tránh race.
+
+<Callout type="pitfall">
+Gọi API ngoài (email, thanh toán) bên trong transaction làm giữ connection lâu và khó rollback phía ngoài; hãy làm sau commit hoặc dùng outbox pattern.
+</Callout>

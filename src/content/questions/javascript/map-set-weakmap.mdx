@@ -1,0 +1,41 @@
+---
+title: "Map, Set, WeakMap, WeakSet và WeakRef khác nhau thế nào?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [map, set, weakmap, weakref, memory]
+answer: "`Map`/`Set` giữ thứ tự chèn, key là bất kỳ kiểu nào (so sánh SameValueZero). `WeakMap`/`WeakSet` chỉ nhận object làm key, giữ tham chiếu yếu nên không cản GC, không iterate được, không có `size`. `WeakRef` giữ tham chiếu yếu tới một object, `deref()` có thể trả undefined."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`const s = new Set([1, 2, 2, 3]);
+console.log(s.size, [...s]);
+
+const k = {};
+const m = new Map();
+m.set(k, "v");
+console.log(m.get(k), m.get({}));        // key là object theo tham chiếu
+
+const wm = new WeakMap();
+wm.set(k, "meta");
+console.log(wm.get(k), wm.has({}));
+try { wm.set("str", 1); } catch (e) { console.log(e.name); }
+
+console.log(new Set([NaN, NaN]).size);   // SameValueZero: NaN bằng NaN`} />
+
+| | Map | WeakMap |
+|---|---|---|
+| Kiểu key | bất kỳ | object (và symbol không đăng ký) |
+| Giữ key sống | có | không (weak) |
+| Iterate / `size` | có | không |
+| Use case | cache, đếm, key phức tạp | metadata gắn với object, private data |
+
+- **WeakMap** phù hợp lưu dữ liệu phụ cho object (cache theo DOM node) mà không gây memory leak: object bị GC thì entry biến mất.
+- **WeakRef** + `FinalizationRegistry` dùng cho cache lớn có thể bị thu hồi; thời điểm GC không xác định nên không dựa vào chúng cho logic đúng sai.
+- Khác `Object`: `Map` không có key thừa kế từ prototype, key không bị ép thành string, `size` O(1), tối ưu cho thêm/xóa thường xuyên.
+
+<Callout type="pitfall">
+`Map` giữ tham chiếu mạnh tới key: dùng `Map` làm cache theo object mà không xóa sẽ leak bộ nhớ. Đây là lý do nên chọn `WeakMap`. Dùng `JSON.stringify` trên `Map`/`Set` cho `{}`.
+</Callout>

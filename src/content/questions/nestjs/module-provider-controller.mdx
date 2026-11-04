@@ -1,0 +1,35 @@
+---
+title: "Module, Provider và Controller trong NestJS khác nhau thế nào?"
+topic: nestjs
+roles: [backend, fullstack]
+level: junior
+tags: [module, provider, controller]
+answer: "Controller nhận request và trả response; Provider (thường là service, gắn @Injectable) chứa logic và được inject; Module (@Module) gom controller/provider lại và quyết định cái gì được export cho module khác dùng."
+---
+| Thành phần | Vai trò | Decorator |
+|---|---|---|
+| Controller | Định tuyến, nhận request, gọi service | `@Controller()` |
+| Provider | Logic, repository, factory, helper | `@Injectable()` |
+| Module | Đơn vị đóng gói, khai báo dependency graph | `@Module()` |
+
+```ts
+@Injectable()
+export class CatsService { findAll() { return []; } }
+
+@Controller('cats')
+export class CatsController {
+  constructor(private readonly cats: CatsService) {}
+  @Get() list() { return this.cats.findAll(); }
+}
+
+@Module({
+  controllers: [CatsController],
+  providers: [CatsService],
+  exports: [CatsService], // cho module import CatsModule dùng
+})
+export class CatsModule {}
+```
+
+<Callout type="pitfall">
+Provider chỉ khả dụng trong module khai báo nó. Muốn dùng ở module khác phải `exports` rồi `imports` module đó, nếu không sẽ lỗi "Nest can't resolve dependencies".
+</Callout>

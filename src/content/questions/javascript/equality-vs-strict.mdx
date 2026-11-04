@@ -1,0 +1,32 @@
+---
+title: "`==` và `===` khác nhau thế nào? Type coercion hoạt động ra sao?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [coercion, equality, truthy-falsy]
+answer: "`===` so sánh giá trị và kiểu, không ép kiểu. `==` ép kiểu (type coercion) theo quy tắc phức tạp trước khi so sánh nên cho kết quả khó đoán, ví dụ `[] == false` là true. Mặc định dùng `===`; chỉ `x == null` là cách viết gọn hợp lý cho null và undefined."
+---
+import Runnable from "../../../components/Runnable";
+
+## Giải thích
+
+- `===` (strict equality): khác kiểu thì false ngay, không ép kiểu.
+- `==` (loose equality): nếu khác kiểu thì ép về primitive/number rồi so sánh. Ngoại lệ đặc biệt: `null == undefined` là true và chúng không `==` với giá trị nào khác.
+- `NaN` không bằng chính nó; dùng `Number.isNaN` hoặc `Object.is`. `Object.is` phân biệt `+0` và `-0`.
+
+<Runnable client:visible lang="js" code={`console.log(0 == "", null == undefined, null == 0);
+console.log("1" == 1, [] == false, NaN == NaN);
+console.log(Object.is(NaN, NaN), 0 === -0, Object.is(0, -0));
+console.log(Boolean([]), Boolean({}), Boolean("0"));`} />
+
+<Callout type="tip">
+Falsy chỉ có 8 giá trị: `false`, `0`, `-0`, `0n`, `""`, `null`, `undefined`, `NaN`. Mảng rỗng, object rỗng và chuỗi `"0"` đều là truthy.
+</Callout>
+
+<Callout type="pitfall">
+Dùng `if (value)` để kiểm tra "có giá trị" sẽ bỏ sót `0` và `""` hợp lệ. Hãy kiểm tra tường minh, hoặc dùng `??` khi chỉ cần loại null/undefined.
+</Callout>
+
+<Callout type="followup">
+`[] + {}` cho kết quả gì? Giải thích bằng `ToPrimitive` (gọi `valueOf` rồi `toString`).
+</Callout>

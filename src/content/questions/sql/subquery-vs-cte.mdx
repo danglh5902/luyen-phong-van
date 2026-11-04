@@ -1,0 +1,33 @@
+---
+title: "Subquery và CTE (WITH) khác nhau thế nào?"
+topic: sql
+roles: [backend, fullstack]
+level: mid
+tags: [subquery, cte, recursive]
+answer: "Subquery lồng trong câu lệnh chính; CTE (WITH) đặt tên cho tập kết quả tạm, giúp câu truy vấn dễ đọc, tái sử dụng trong cùng câu lệnh và hỗ trợ đệ quy. Hiệu năng thường tương đương, tuỳ optimizer có inline hay materialize CTE."
+---
+```sql
+WITH monthly AS (
+  SELECT user_id, SUM(total) AS revenue
+  FROM orders
+  WHERE created_at >= '2025-01-01'
+  GROUP BY user_id
+)
+SELECT u.name, m.revenue
+FROM monthly m JOIN users u ON u.id = m.user_id
+WHERE m.revenue > 1000;
+```
+
+```sql
+-- CTE đệ quy: duyệt cây danh mục
+WITH RECURSIVE tree AS (
+  SELECT id, parent_id FROM categories WHERE id = 1
+  UNION ALL
+  SELECT c.id, c.parent_id FROM categories c JOIN tree t ON c.parent_id = t.id
+)
+SELECT * FROM tree;
+```
+
+<Callout type="pitfall">
+PostgreSQL trước 12 luôn materialize CTE (như optimization fence); từ 12 thì inline nếu CTE không đệ quy và chỉ được tham chiếu một lần. Đừng mặc định CTE nhanh hơn hay chậm hơn: hãy xem `EXPLAIN`.
+</Callout>

@@ -1,0 +1,31 @@
+---
+title: "Circular dependency trong NestJS: nguyên nhân, forwardRef và cách tránh"
+topic: nestjs
+roles: [backend, fullstack]
+level: senior
+tags: [circular-dependency, forwardRef, di]
+answer: "Hai provider (hoặc module) phụ thuộc lẫn nhau khiến Nest không resolve được thứ tự khởi tạo. Cách vá là forwardRef(() => X) kèm @Inject ở cả hai phía (và ở imports của module). Cách tốt hơn là tái cấu trúc: tách service thứ ba hoặc dùng event."
+---
+```ts
+@Injectable()
+export class AService {
+  constructor(
+    @Inject(forwardRef(() => BService)) private b: BService,
+  ) {}
+}
+@Injectable()
+export class BService {
+  constructor(
+    @Inject(forwardRef(() => AService)) private a: AService,
+  ) {}
+}
+// Module: imports: [forwardRef(() => BModule)] ở cả hai phía
+```
+
+- Dấu hiệu: lỗi "Nest cannot create the module instance... circular dependency", hoặc dependency là `undefined` do vòng import file TypeScript.
+- Với vòng import file, gốc lỗi nằm ở `import` tuần hoàn giữa các file; forwardRef chỉ xử lý lúc resolve DI.
+- Thứ tự khởi tạo không còn được đảm bảo, nên không dùng dependency kia ngay trong constructor.
+
+<Callout type="tip">
+Hướng sạch: tách logic chung sang service C mà A và B cùng dùng, hoặc giao tiếp qua EventEmitter/CQRS để bỏ phụ thuộc trực tiếp.
+</Callout>

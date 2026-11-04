@@ -1,0 +1,47 @@
+---
+title: "Declaration merging và module augmentation là gì?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [declaration-merging, module-augmentation, d-ts, interface]
+answer: "Declaration merging: nhiều khai báo cùng tên (interface, namespace, enum, class + interface...) được TS gộp thành một định nghĩa. `type` alias không merge được. Module augmentation dùng `declare module` hoặc `declare global` để mở rộng type của thư viện/global (Express Request, Window) mà không sửa mã nguồn."
+---
+
+## Declaration merging
+
+```ts
+interface Box { width: number }
+interface Box { height: number }       // gộp thành { width; height }
+const b: Box = { width: 1, height: 2 };
+
+function greet(name: string) { return greet.prefix + name; }
+namespace greet { export const prefix = "Hi "; } // function + namespace
+```
+
+- Interface cùng tên gộp property (property trùng phải cùng kiểu); method trùng thành overload, khai báo sau ưu tiên trước.
+- Namespace gộp được với class, function, enum để thêm static member hoặc thuộc tính.
+- `type` alias khai báo trùng tên sẽ báo lỗi, đó là khác biệt chính với interface.
+
+## Module augmentation
+
+```ts
+// types/express.d.ts (file phải là module: có import/export)
+import "express";
+declare module "express-serve-static-core" {
+  interface Request { user?: { id: string } }
+}
+
+// mở rộng global
+declare global {
+  interface Window { analytics: { track(e: string): void } }
+}
+export {};
+```
+
+- Augmentation chỉ **thêm** vào interface/namespace có sẵn, không thể thay thế khai báo hay thêm top-level mới ngoài merge.
+- Tên module trong `declare module` phải đúng chỗ khai báo gốc (Express Request nằm ở `express-serve-static-core`).
+- File phải được `tsconfig` (`include`/`files`/`typeRoots`) nhìn thấy.
+
+<Callout type="pitfall">
+Quên `export {}` hoặc `import` làm file thành script toàn cục: `declare module "x"` khi đó là khai báo ambient mới thay vì augmentation, và có thể ghi đè hoàn toàn type thư viện. Augmentation cũng không đảm bảo giá trị tồn tại ở runtime (`req.user` vẫn có thể undefined).
+</Callout>

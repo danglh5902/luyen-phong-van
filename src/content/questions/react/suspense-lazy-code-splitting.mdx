@@ -1,0 +1,32 @@
+---
+title: "Suspense, React.lazy và code-splitting dùng thế nào?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [suspense, lazy, code-splitting, performance]
+answer: "React.lazy tải component bằng dynamic import khi cần render lần đầu, tách ra bundle riêng. Suspense hiển thị fallback trong lúc chờ. Nên chia theo route hoặc component nặng ít dùng để giảm bundle ban đầu."
+---
+```jsx
+const Chart = lazy(() => import("./Chart")); // Chart phải export default
+
+function Dashboard() {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <Chart />
+    </Suspense>
+  );
+}
+```
+
+- Bundler (Vite/Webpack) tách `import()` thành chunk riêng, tải khi component được render.
+- Suspense bắt "promise đang chờ" của các con bên dưới (lazy, và data fetching tương thích như React Query suspense, `use`).
+- Có thể đặt nhiều Suspense lồng nhau để mỗi vùng có fallback riêng, tránh cả trang trắng.
+- Prefetch: gọi `import("./Chart")` khi hover vào link để chunk có sẵn trước khi click.
+
+<Callout type="pitfall">
+Lazy-load quá nhỏ làm tăng số request và gây waterfall. Ưu tiên route-level và thư viện nặng (editor, chart). Kết hợp error boundary để xử lý khi tải chunk thất bại.
+</Callout>
+
+<Callout type="followup">
+Với SSR, Suspense cho phép streaming HTML và selective hydration từ React 18.
+</Callout>

@@ -1,0 +1,20 @@
+---
+title: "interface và type khác nhau thế nào?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [types]
+answer: "Cả hai mô tả hình dạng object. interface có thể mở rộng/khai báo gộp (declaration merging); type linh hoạt hơn: hỗ trợ union, tuple, mapped/conditional type."
+---
+```ts
+interface User { id: number }
+interface User { name: string }        // gộp: User có id + name
+
+type Id = string | number;             // union: chỉ type làm được
+type Pair = [string, number];          // tuple
+type Admin = User & { role: 'admin' }; // intersection
+```
+
+<Callout type="tip">
+Quy ước hay dùng: `interface` cho object/class public API, `type` cho mọi thứ còn lại. Quan trọng là nhất quán trong team.
+</Callout>

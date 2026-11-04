@@ -1,0 +1,35 @@
+---
+title: "Dynamic module: forRoot, forRootAsync, ConfigModule; global vs scoped module"
+topic: nestjs
+roles: [backend, fullstack]
+level: senior
+tags: [dynamic-module, forRoot, config, global-module]
+answer: "Dynamic module là module có static method (forRoot/register/forRootAsync) trả về DynamicModule với providers theo cấu hình. forRootAsync nhận useFactory + inject để lấy config bất đồng bộ (vd. từ ConfigService). @Global() làm export khả dụng mọi nơi không cần import."
+---
+```ts
+@Module({})
+export class MailModule {
+  static forRootAsync(opts: {
+    imports?: any[]; inject?: any[];
+    useFactory: (...a: any[]) => MailOptions | Promise<MailOptions>;
+  }): DynamicModule {
+    return {
+      module: MailModule,
+      imports: opts.imports ?? [],
+      providers: [
+        { provide: MAIL_OPTIONS, useFactory: opts.useFactory, inject: opts.inject ?? [] },
+        MailService,
+      ],
+      exports: [MailService],
+    };
+  }
+}
+// MailModule.forRootAsync(...) với inject: [ConfigService]
+```
+
+- `ConfigModule.forRoot()` với tùy chọn `isGlobal: true` nạp `.env` và validate; đặt global để khỏi import lại ở mọi module.
+- Quy ước: `forRoot` cấu hình một lần cho app, `register` cấu hình riêng theo từng nơi import, `forFeature` đăng ký phần riêng (vd. entity).
+
+<Callout type="pitfall">
+Lạm dụng `@Global()` tạo dependency ngầm, khó theo dõi và khó test. Chỉ dùng cho hạ tầng (config, logger, db); module nghiệp vụ nên import tường minh.
+</Callout>

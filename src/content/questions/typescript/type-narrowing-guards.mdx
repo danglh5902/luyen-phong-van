@@ -1,0 +1,46 @@
+---
+title: "Type narrowing và type guard là gì? Discriminated union hoạt động ra sao?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [narrowing, type-guard, discriminated-union]
+answer: "Narrowing là việc TypeScript thu hẹp union type trong một nhánh code nhờ `typeof`, `instanceof`, `in`, so sánh bằng, truthiness hoặc type guard tự định nghĩa (`x is T`). Discriminated union dùng một field literal chung (`kind`) để narrow chính xác, kèm kiểm tra `never` để bắt case thiếu."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="ts" code={`type Shape =
+  | { kind: "circle"; r: number }
+  | { kind: "rect"; w: number; h: number };
+
+function area(s: Shape): number {
+  switch (s.kind) {
+    case "circle": return Math.round(Math.PI * s.r ** 2);
+    case "rect": return s.w * s.h;
+    default: {
+      const _exhaustive: never = s; // thêm biến thể mới mà quên case sẽ lỗi
+      return _exhaustive;
+    }
+  }
+}
+
+function isString(x: unknown): x is string { return typeof x === "string"; }
+
+console.log(area({ kind: "circle", r: 2 }), area({ kind: "rect", w: 3, h: 4 }));
+console.log(isString("a"), isString(1));`} />
+
+## Các cách narrow
+
+- `typeof x === "string"` cho primitive; `x instanceof Date` cho class.
+- `"swim" in animal` kiểm tra property tồn tại.
+- Truthiness (`if (x)`) loại `null`/`undefined`, nhưng cũng loại `0` và `""`.
+- Type predicate `x is T` do bạn tự đảm bảo logic đúng; assertion function `asserts x is T` ném lỗi nếu sai.
+
+<Callout type="pitfall">
+Type guard viết sai không bị compiler bắt: `x is string` trả `true` bừa vẫn compile. Narrowing cũng bị mất qua callback hoặc khi biến bị gán lại (`let`); dùng `const` để giữ.
+</Callout>
+
+<Callout type="tip">
+Ưu tiên discriminated union thay vì nhiều field optional (`loading?`, `error?`, `data?`) để loại trạng thái bất khả thi.
+</Callout>

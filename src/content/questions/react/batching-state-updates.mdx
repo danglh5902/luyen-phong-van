@@ -1,0 +1,35 @@
+---
+title: "Batching state update trong React 18 (automatic batching) là gì?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [state, batching, react-18]
+answer: "Batching gộp nhiều lần setState thành một lần render. Từ React 18 với createRoot, việc gộp diễn ra ở mọi nơi (event handler, setTimeout, promise), không chỉ trong event handler của React. Dùng flushSync để ép render ngay."
+---
+```jsx
+function onClick() {
+  setCount(c => c + 1);
+  setFlag(f => !f);
+  // React 18: chỉ 1 lần re-render, kể cả khi nằm trong
+  // setTimeout, fetch().then(...), v.v.
+}
+```
+
+- React 17: chỉ batch trong event handler của React; trong `setTimeout`/promise mỗi `setState` render riêng.
+- React 18: automatic batching ở mọi ngữ cảnh, nhưng phải dùng `createRoot` (không phải `ReactDOM.render`).
+- `setState` không đổi biến `state` hiện tại trong lượt render đó: đọc lại sẽ ra giá trị cũ.
+
+```jsx
+import { flushSync } from "react-dom";
+
+flushSync(() => setCount(c => c + 1)); // DOM đã cập nhật ở dòng dưới
+flushSync(() => setFlag(f => !f));     // render lần thứ hai
+```
+
+<Callout type="pitfall">
+`setCount(count + 1)` gọi 3 lần liên tiếp chỉ tăng 1 vì cùng đọc `count` cũ. Dùng dạng updater `setCount(c => c + 1)` để tăng 3.
+</Callout>
+
+<Callout type="tip">
+`flushSync` làm giảm hiệu năng, chỉ dùng khi cần đọc DOM ngay (ví dụ đo kích thước, scroll) sau khi cập nhật.
+</Callout>

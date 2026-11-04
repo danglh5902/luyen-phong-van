@@ -1,0 +1,38 @@
+---
+title: "`strict` trong tsconfig bật những flag nào? Nên bật thêm flag nào?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [tsconfig, strict, compiler-options]
+answer: "`strict: true` bật nhóm kiểm tra chặt: `strictNullChecks`, `noImplicitAny`, `strictFunctionTypes`, `strictBindCallApply`, `strictPropertyInitialization`, `noImplicitThis`, `useUnknownInCatchVariables`, `alwaysStrict`. Nên bật thêm `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride` vì không nằm trong `strict`."
+---
+
+## Các flag trong `strict`
+
+| Flag | Tác dụng |
+|---|---|
+| `strictNullChecks` | `null`/`undefined` không gán được cho type khác; bắt buộc kiểm tra |
+| `noImplicitAny` | báo lỗi khi suy luận ra `any` ngầm (thiếu type tham số) |
+| `strictFunctionTypes` | tham số hàm kiểm tra contravariant (không áp cho method) |
+| `strictBindCallApply` | kiểm tra đối số của `bind`/`call`/`apply` |
+| `strictPropertyInitialization` | property class phải được khởi tạo trong constructor |
+| `noImplicitThis` | `this` không được ngầm là `any` |
+| `useUnknownInCatchVariables` | biến trong `catch` là `unknown` thay vì `any` |
+| `alwaysStrict` | phát ra `"use strict"` cho mọi file |
+| `strictBuiltinIteratorReturn` | (TS 5.6) iterator dựng sẵn trả `undefined` thay vì `any` khi `done` |
+
+## Flag hay nên thêm (ngoài `strict`)
+
+- `noUncheckedIndexedAccess`: `arr[i]` và `obj[key]` có kiểu `T | undefined`.
+- `exactOptionalPropertyTypes`: phân biệt "không có key" và "có key giá trị undefined".
+- `noImplicitOverride`: bắt buộc `override` khi ghi đè method của class cha.
+- `noFallthroughCasesInSwitch`, `noImplicitReturns`: bắt lỗi luồng điều khiển.
+- `verbatimModuleSyntax` / `isolatedModules`: an toàn khi build bằng tool chỉ xóa type (esbuild, swc).
+
+<Callout type="tip">
+Dự án cũ chuyển sang strict dần: bật từng flag (bắt đầu `noImplicitAny`, rồi `strictNullChecks`), hoặc tách `tsconfig` strict cho thư mục mới. Mỗi bản TS mới có thể thêm kiểm tra vào `strict`, nên nâng version có thể sinh lỗi mới.
+</Callout>
+
+<Callout type="pitfall">
+`skipLibCheck: true` giúp build nhanh và tránh lỗi từ `.d.ts` của thư viện, nhưng cũng bỏ qua kiểm tra file khai báo của chính bạn. `strict` không đồng nghĩa với an toàn: `as`, `any` và `@ts-ignore` vẫn lách được.
+</Callout>

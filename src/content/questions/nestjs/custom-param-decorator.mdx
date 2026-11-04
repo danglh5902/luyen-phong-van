@@ -1,0 +1,31 @@
+---
+title: "Tạo custom parameter decorator bằng createParamDecorator (ví dụ @CurrentUser)"
+topic: nestjs
+roles: [backend, fullstack]
+level: junior
+tags: [decorator, createParamDecorator, executioncontext]
+answer: "createParamDecorator nhận (data, ctx: ExecutionContext) và trả giá trị sẽ inject vào tham số handler. Thường dùng để lấy user đã được guard gắn vào request, như @CurrentUser(), giúp controller gọn, không đụng tới req."
+---
+```ts
+export const CurrentUser = createParamDecorator(
+  (field: keyof User | undefined, ctx: ExecutionContext) => {
+    const user = ctx.switchToHttp().getRequest().user;
+    return field ? user?.[field] : user;
+  },
+);
+
+@UseGuards(JwtAuthGuard)
+@Get('profile')
+profile(@CurrentUser() user: User, @CurrentUser('id') id: number) {
+  return { id, email: user.email };
+}
+```
+
+- `data` là đối số truyền vào decorator (`'id'`).
+- Dùng `ctx.getType()` để phân biệt `http`, `rpc`, `ws` khi decorator dùng chung nhiều transport.
+- Pipe vẫn áp dụng lên giá trị từ custom decorator (`@CurrentUser(new ValidationPipe(...))`).
+- Gộp nhiều decorator bằng `applyDecorators` (ví dụ `@Auth(Role.Admin)` = `@UseGuards` + `@SetMetadata`).
+
+<Callout type="pitfall">
+Decorator chỉ đọc `req.user`; bản thân nó không xác thực. Nếu quên guard, `user` sẽ là `undefined`.
+</Callout>

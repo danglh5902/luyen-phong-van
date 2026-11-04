@@ -1,0 +1,29 @@
+---
+title: "CSS variables (custom properties) và cách làm dark mode với `prefers-color-scheme`"
+topic: html-css
+roles: [frontend, fullstack]
+level: mid
+tags: [css-variables, dark-mode, theming]
+answer: "CSS variable khai báo bằng --name và đọc bằng var(--name, fallback); chúng kế thừa và đổi được lúc runtime (khác biến Sass). Dark mode: đặt màu bằng biến ở :root, ghi đè biến trong @media (prefers-color-scheme: dark) và/hoặc theo thuộc tính data-theme do người dùng chọn."
+---
+```css
+:root {
+  --bg: #fff;
+  --fg: #111;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #121212; --fg: #eee; }
+}
+:root[data-theme="dark"] { --bg: #121212; --fg: #eee; }
+
+body { background: var(--bg); color: var(--fg); }
+```
+
+- Biến có scope theo cây DOM, có thể ghi đè cục bộ: `.card` đặt lại `--bg` thì chỉ ảnh hưởng con của nó.
+- Có thể đổi bằng JS: `el.style.setProperty("--bg", "#000")`.
+- `color-scheme` giúp scrollbar và form control mặc định theo theme.
+
+<Callout type="pitfall">
+Để lưu lựa chọn của người dùng, đặt `data-theme` sớm (script inline trong head) để tránh nháy sai theme (FOUC) khi tải trang.
+</Callout>

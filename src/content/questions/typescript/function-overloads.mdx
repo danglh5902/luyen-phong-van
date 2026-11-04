@@ -1,0 +1,34 @@
+---
+title: "Function overload trong TypeScript hoạt động thế nào? Khi nào nên dùng?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [overload, functions, generics]
+answer: "Overload khai báo nhiều signature cho một hàm; implementation signature đi sau cùng, phải tương thích với mọi overload và không hiển thị với bên ngoài. TS chọn overload đầu tiên khớp (từ trên xuống). Dùng khi kiểu trả về phụ thuộc kiểu đối số mà union/generic không biểu diễn được."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="ts" code={`function parse(x: string): number;
+function parse(x: number): string;
+function parse(x: string | number): number | string {
+  return typeof x === "string" ? Number(x) : String(x);
+}
+
+console.log(parse("42") + 1);   // number 43
+console.log(parse(42) + 1);     // string "421"`} />
+
+- Chỉ các overload signature là public API; implementation signature (`string | number`) không gọi trực tiếp được.
+- Thứ tự quan trọng: đặt signature cụ thể trước, tổng quát sau.
+- Cũng áp dụng cho method trong class và `declare function` trong file `.d.ts`.
+
+## Khi nào không nên
+
+- Nếu chỉ khác nhau về kiểu tham số mà trả về giống nhau, dùng union: `(x: string | number): void`.
+- Nếu trả về phụ thuộc kiểu tham số theo quy luật, dùng generic hoặc conditional type, tránh viết nhiều overload lặp lại.
+- Overload không kiểm tra thân hàm: implementation có thể trả sai kiểu mà vẫn compile nếu khớp signature rộng.
+
+<Callout type="pitfall">
+Gọi hàm overload với tham số kiểu union (`string | number`) sẽ lỗi vì không overload nào nhận union, trừ khi thêm một overload riêng cho union đó.
+</Callout>

@@ -1,0 +1,16 @@
+---
+title: "Khi nào dùng git stash và cherry-pick?"
+topic: git
+roles: [frontend, backend, fullstack, devops]
+level: mid
+tags: [stash, cherry-pick]
+answer: "stash cất tạm thay đổi chưa commit để đổi nhánh; cherry-pick lấy đúng một commit từ nhánh khác áp vào nhánh hiện tại (ví dụ hotfix)."
+---
+```bash
+git stash push -m "wip login"   # cất việc đang dở
+git switch main                 # làm việc khác
+git switch feature && git stash pop
+
+git switch release
+git cherry-pick a1b2c3d         # đem riêng commit hotfix sang release
+```

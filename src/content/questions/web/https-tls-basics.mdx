@@ -1,0 +1,26 @@
+---
+title: "HTTPS và TLS handshake hoạt động cơ bản như thế nào?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: junior
+tags: [https, tls, certificate, security]
+answer: "HTTPS là HTTP chạy trên TLS, cung cấp mã hóa, toàn vẹn và xác thực server. Trong handshake, client và server thỏa thuận phiên bản/cipher, server gửi certificate để client kiểm tra chuỗi tin cậy, rồi hai bên trao đổi khóa (ECDHE) để sinh session key đối xứng mã hóa dữ liệu."
+---
+1. ClientHello: phiên bản TLS, danh sách cipher suite, số ngẫu nhiên.
+2. ServerHello + certificate (chứa public key, do CA ký).
+3. Client xác minh certificate: chuỗi CA tin cậy, domain khớp, còn hạn, chưa thu hồi.
+4. Trao đổi khóa (ECDHE) để cả hai tính ra cùng session key.
+5. Từ đó dữ liệu được mã hóa đối xứng (AES-GCM, ChaCha20).
+
+```http
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+```
+
+- Mã hóa bất đối xứng chỉ dùng để thiết lập khóa vì chậm; dữ liệu thật dùng mã hóa đối xứng.
+- TLS 1.3 rút gọn handshake còn 1 round trip (hỗ trợ 0-RTT resumption).
+- ECDHE cho forward secrecy: lộ khóa riêng của server sau này không giải mã được traffic cũ.
+- HSTS ép trình duyệt luôn dùng HTTPS, chống downgrade/sslstrip.
+
+<Callout type="pitfall">
+HTTPS không bảo vệ khỏi XSS hay SQL injection; nó chỉ bảo vệ dữ liệu trên đường truyền.
+</Callout>

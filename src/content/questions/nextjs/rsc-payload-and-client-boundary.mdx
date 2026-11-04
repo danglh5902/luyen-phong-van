@@ -1,0 +1,37 @@
+---
+title: "RSC payload là gì? 'use client' boundary ảnh hưởng thế nào đến bundle và cách tối ưu?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: senior
+tags: [rsc-payload, use-client, bundle, dynamic-import, composition]
+answer: "RSC payload là chuỗi mô tả cây React đã render của Server Component, kèm tham chiếu (module id, chunk) tới Client Component và props đã serialize. 'use client' tạo ranh giới: mọi module được import từ file đó đều vào client bundle. Giữ boundary ở lá, truyền Server Component qua children, lazy-load phần nặng."
+---
+RSC payload dùng ở hai nơi: lúc tải đầu (kèm HTML để hydrate và đồng bộ cây) và khi điều hướng client (Router tải payload thay vì HTML, rồi merge vào cây hiện có, giữ nguyên state client).
+
+```tsx
+// ❌ Cả Sidebar (và thư viện markdown nặng) bị kéo vào client
+"use client";
+import { marked } from "marked";
+
+// ✅ Client chỉ lo tương tác; nội dung nặng ở lại server
+// ClientShell.tsx
+"use client";
+export function ClientShell({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return <div>{open && children}<button onClick={() => setOpen(!open)}>Toggle</button></div>;
+}
+// page.tsx (Server): <ClientShell><HeavyServerContent /></ClientShell>
+```
+
+- Props từ Server sang Client phải serialize được (không hàm thường, không class instance); Server Action thì được.
+- Provider (Theme, Query) đặt trong một Client Component rồi bọc `children`.
+- Lazy-load phần nặng: `next/dynamic(() => import('./Chart'), { ssr: false })` (`ssr: false` chỉ dùng trong Client Component).
+- Phân tích bằng `@next/bundle-analyzer`; dùng `server-only` để chặn rò rỉ.
+
+<Callout type="pitfall">
+Đặt `'use client'` ở layout gốc hoặc component cha lớn sẽ biến cả cây con import trực tiếp thành client code. Truyền dữ liệu nhạy cảm qua props cũng làm nó xuất hiện trong payload gửi xuống browser.
+</Callout>
+
+<Callout type="followup">
+Server Component có xuất hiện trong bundle JS không? Không, chỉ kết quả render (trong payload). Client Component nằm trong `children` do Server truyền vào vẫn là client code.
+</Callout>

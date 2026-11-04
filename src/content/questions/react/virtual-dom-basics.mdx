@@ -1,0 +1,29 @@
+---
+title: "Virtual DOM là gì và vì sao React dùng nó?"
+topic: react
+roles: [frontend, fullstack]
+level: junior
+tags: [virtual-dom, rendering, fundamentals]
+answer: "Virtual DOM là cây object JS mô tả UI. Khi state đổi, React render cây mới, so sánh (diff) với cây cũ rồi chỉ áp dụng phần thay đổi tối thiểu vào DOM thật. Lợi ích chính là mô hình khai báo, không phải luôn nhanh hơn thao tác DOM thủ công."
+---
+Luồng cập nhật: **state đổi, render (tạo cây element mới), diff với cây cũ, commit các thay đổi tối thiểu vào DOM thật**.
+
+- Bạn mô tả UI "trông thế nào" theo state, React lo việc cập nhật DOM.
+- Gom nhiều thay đổi thành một đợt commit, tránh thao tác DOM thừa.
+- Cây element cũng cho phép render ở môi trường khác DOM (React Native, SSR).
+
+```jsx
+function Counter() {
+  const [n, setN] = useState(0);
+  // Mỗi lần click: render lại, diff chỉ thấy text node đổi
+  return <button onClick={() => setN(n + 1)}>Đã bấm {n}</button>;
+}
+```
+
+<Callout type="pitfall">
+Đừng nói "Virtual DOM nhanh hơn DOM". Diff có chi phí riêng; giá trị cốt lõi là lập trình khai báo với hiệu năng đủ tốt. Code DOM thủ công được tối ưu kỹ vẫn có thể nhanh hơn.
+</Callout>
+
+<Callout type="followup">
+Chi tiết thuật toán diff, key và Fiber xem câu về reconciliation.
+</Callout>

@@ -1,0 +1,32 @@
+---
+title: "Xử lý lỗi trong Node.js: uncaughtException và unhandledRejection"
+topic: nodejs
+roles: [backend, fullstack]
+level: mid
+tags: [error-handling, uncaughtException, unhandledRejection, promise]
+answer: "uncaughtException và unhandledRejection là lưới an toàn cuối, không phải cách xử lý lỗi bình thường. Sau khi bắt, nên log rồi tắt process có kiểm soát (để PM2/K8s khởi động lại) vì trạng thái có thể đã hỏng. Từ Node 15, unhandled rejection mặc định làm crash process."
+---
+```js
+process.on("unhandledRejection", (reason) => {
+  logger.error({ reason }, "unhandledRejection");
+  throw reason; // chuyển thành uncaughtException
+});
+process.on("uncaughtException", (err) => {
+  logger.fatal(err, "uncaughtException");
+  shutdown(1); // đóng gọn rồi thoát, không tiếp tục chạy
+});
+```
+
+Phân loại lỗi:
+
+- Operational (dữ liệu sai, DB timeout, 404): dự đoán được, xử lý và trả lỗi phù hợp.
+- Programmer error (TypeError, bug): không phục hồi được, nên crash và restart.
+
+Thực hành tốt:
+- `async` handler trong Express 4 không tự chuyển lỗi sang error middleware; bọc try/catch hoặc dùng wrapper (Express 5 hỗ trợ sẵn).
+- Callback style: luôn kiểm tra `err` đầu tiên; `EventEmitter` phát `error` mà không có listener sẽ throw.
+- Dùng `Error` có `cause`, `code` để phân loại; không ném string.
+
+<Callout type="pitfall">
+Bắt `uncaughtException` rồi tiếp tục phục vụ request là nguy hiểm: có thể rò rỉ tài nguyên, state không nhất quán. Chỉ dùng để log và thoát.
+</Callout>

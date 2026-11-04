@@ -1,0 +1,32 @@
+---
+title: "Specificity và cascade trong CSS hoạt động thế nào? `!important` có nên dùng?"
+topic: html-css
+roles: [frontend, fullstack]
+level: mid
+tags: [specificity, cascade, important]
+answer: "Cascade quyết định theo thứ tự: origin và !important, rồi specificity (inline > id > class/attribute/pseudo-class > element), cuối cùng là thứ tự xuất hiện. !important nên hạn chế vì phá cascade, chỉ dùng cho utility hoặc ghi đè style bên thứ ba."
+---
+| Selector | Specificity (id, class, element) |
+|---|---|
+| `p` | 0,0,1 |
+| `.card p` | 0,1,1 |
+| `#nav .item` | 1,1,0 |
+| `:where(.a .b)` | 0,0,0 |
+| `:is(.a, #b)` | lấy giá trị cao nhất trong danh sách |
+
+```css
+.btn { color: black; }
+.card .btn { color: blue; }  /* thắng vì specificity cao hơn */
+.btn { color: red; }         /* cùng specificity thì dòng sau thắng */
+```
+
+- Thuộc tính kế thừa (`color`, `font-*`) truyền xuống con; không kế thừa: `margin`, `border`, `background`.
+- Ép kế thừa bằng `inherit`; reset bằng `initial`, `unset`, `revert`.
+
+<Callout type="tip">
+Giữ specificity thấp và phẳng (class đơn), dùng `@layer` để kiểm soát thứ tự thay vì leo thang bằng id hoặc `!important`.
+</Callout>
+
+<Callout type="pitfall">
+Khai báo `!important` chỉ bị ghi đè bởi `!important` khác có specificity cao hơn, dẫn đến "chiến tranh important".
+</Callout>

@@ -1,0 +1,39 @@
+---
+title: "Connection pooling database trong Node.js: cỡ pool, leak và nhiều instance"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [database, pool, postgres, performance]
+answer: "Mở kết nối DB tốn kém nên dùng pool tái sử dụng. Cỡ pool nên nhỏ (vài chục) vì DB bị giới hạn max_connections; tổng = pool size x số instance phải thấp hơn giới hạn đó. Luôn release connection (finally), tránh giữ connection qua thao tác chậm, và dùng PgBouncer khi scale lớn."
+---
+```js
+const { Pool } = require('pg');
+const pool = new Pool({
+  max: 10,                       // mỗi process
+  idleTimeoutMillis: 30_000,
+  connectionTimeoutMillis: 2_000 // chờ lấy connection quá lâu thì lỗi, không treo
+});
+
+async function transfer(a, b, amt) {
+  const c = await pool.connect();
+  try {
+    await c.query('BEGIN');
+    // ... các câu lệnh dùng cùng c
+    await c.query('COMMIT');
+  } catch (e) { await c.query('ROLLBACK'); throw e; }
+  finally { c.release(); }       // quên là leak, pool cạn
+}
+```
+
+- Transaction bắt buộc dùng **cùng một** connection; `pool.query` mỗi lần có thể lấy connection khác.
+- Tính toán: `max_connections` DB = 100, chạy 10 pod, mỗi pod `max: 10` là đã chạm trần.
+- Pool đầy thì request xếp hàng chờ; tăng pool không giúp nếu bottleneck là DB.
+- Serverless/nhiều instance: dùng proxy pooling (PgBouncer, RDS Proxy).
+
+<Callout type="pitfall">
+Quên `release()` khi có lỗi làm pool cạn dần, ứng dụng treo mà DB vẫn rảnh. Theo dõi `pool.totalCount`, `idleCount`, `waitingCount`.
+</Callout>
+
+<Callout type="tip">
+Giữ transaction ngắn và không gọi HTTP bên ngoài bên trong transaction, vì nó giữ connection (và lock) trong lúc chờ.
+</Callout>

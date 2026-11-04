@@ -1,0 +1,48 @@
+---
+title: "ES Modules khác CommonJS thế nào? Live binding và tree shaking là gì?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [modules, esm, commonjs, tree-shaking]
+answer: "ESM (`import`/`export`) được phân tích tĩnh, bất đồng bộ, export là live binding (tham chiếu sống) và hỗ trợ tree shaking, top-level await. CommonJS (`require`) chạy đồng bộ lúc runtime, export là bản sao giá trị tại thời điểm gán trên `module.exports`."
+---
+
+## So sánh
+
+| | ESM | CommonJS |
+|---|---|---|
+| Cú pháp | `import` / `export` | `require` / `module.exports` |
+| Phân tích | tĩnh, lúc parse | động, lúc chạy |
+| Tải | bất đồng bộ | đồng bộ |
+| Export | live binding, chỉ đọc | giá trị/object được gán |
+| Tree shaking | có | khó |
+| Top-level await | có | không |
+| `this` ở top-level | `undefined` | `module.exports` |
+
+## Live binding
+
+```js
+// counter.js
+export let count = 0;
+export function inc() { count++; }
+
+// main.js
+import { count, inc } from "./counter.js";
+inc();
+console.log(count); // 1, thấy giá trị mới
+// count = 5;       // TypeError: import là chỉ đọc
+```
+
+Với CommonJS, `const { count } = require("./counter")` chỉ lấy giá trị lúc đó và không cập nhật theo.
+
+- `import()` động trả Promise, dùng cho code splitting và lazy loading.
+- Module được cache: chỉ thực thi một lần dù import nhiều nơi.
+- Phụ thuộc vòng: ESM xử lý tốt hơn nhờ binding, nhưng truy cập trước khi khởi tạo gây `ReferenceError` (TDZ).
+
+<Callout type="pitfall">
+Tree shaking cần ESM và code không có side effect ở top-level. Hãy khai báo `"sideEffects": false` trong package.json khi an toàn, và tránh `export default { ... }` gom nhiều thứ vào một object.
+</Callout>
+
+<Callout type="followup">
+Trong Node.js, file được coi là ESM khi nào? (Đuôi `.mjs` hoặc `"type": "module"` trong package.json.)
+</Callout>

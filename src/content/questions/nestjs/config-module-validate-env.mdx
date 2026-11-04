@@ -1,0 +1,41 @@
+---
+title: "ConfigModule trong NestJS và validate biến môi trường lúc khởi động"
+topic: nestjs
+roles: [backend, fullstack]
+level: junior
+tags: [config, env, validation, joi]
+answer: "ConfigModule.forRoot đọc .env và biến môi trường, cung cấp ConfigService để inject. Dùng validationSchema (Joi) hoặc hàm validate (zod/class-validator) để app fail fast khi thiếu hoặc sai biến. isGlobal: true giúp không phải import ở từng module."
+---
+```ts
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: Joi.object({
+        NODE_ENV: Joi.string().valid('development', 'production', 'test').required(),
+        PORT: Joi.number().default(3000),
+        DATABASE_URL: Joi.string().uri().required(),
+      }),
+    }),
+  ],
+})
+export class AppModule {}
+
+@Injectable()
+export class DbService {
+  constructor(private config: ConfigService) {}
+  url = this.config.getOrThrow<string>('DATABASE_URL');
+}
+```
+
+- Biến env luôn là string; validation (Joi `number()`) giúp ép kiểu về đúng kiểu.
+- `getOrThrow` ném lỗi nếu thiếu, an toàn hơn `get`.
+- `registerAs('db', () => (...))` gom cấu hình theo namespace, cho phép inject typed config.
+
+<Callout type="tip">
+Fail fast: app crash ngay khi khởi động vì thiếu `DATABASE_URL` tốt hơn nhiều so với lỗi lúc chạy request đầu tiên.
+</Callout>
+
+<Callout type="pitfall">
+Đừng `process.env.X` rải rác khắp code; khó test và không được validate. Không commit file `.env` chứa secret.
+</Callout>

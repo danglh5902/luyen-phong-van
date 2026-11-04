@@ -1,0 +1,37 @@
+---
+title: "Middleware và Guard trong NestJS khác nhau thế nào? Khi nào dùng cái nào?"
+topic: nestjs
+roles: [backend, fullstack]
+level: junior
+tags: [middleware, guard, authorization]
+answer: "Middleware chạy sớm nhất, chỉ biết req/res/next, không biết handler nào sẽ chạy; hợp cho logging, CORS, parse. Guard chạy sau middleware, có ExecutionContext nên biết controller/handler và metadata (Reflector); hợp cho authentication/authorization và trả boolean cho phép hay chặn."
+---
+| | Middleware | Guard |
+|---|---|---|
+| Thứ tự | Trước guard | Sau middleware, trước interceptor/pipe |
+| Truy cập | `req`, `res`, `next` | `ExecutionContext` (class, handler, args) |
+| Biết route handler? | Không | Có, đọc được metadata qua `Reflector` |
+| Dùng cho | Log, request id, cookie parser | Auth, RBAC, feature flag |
+| Kết quả | Gọi `next()` hoặc kết thúc response | Trả `true`/`false`, hoặc ném exception |
+| Hỗ trợ DI | Có (class middleware) | Có |
+
+```ts
+@Injectable()
+export class AuthGuard implements CanActivate {
+  canActivate(ctx: ExecutionContext): boolean {
+    const req = ctx.switchToHttp().getRequest();
+    return !!req.headers.authorization;   // false thì Nest trả 403
+  }
+}
+
+@UseGuards(AuthGuard)
+@Get('me') me() {}
+```
+
+<Callout type="tip">
+Guard trả `false` mặc định cho 403 Forbidden; muốn 401 Unauthorized thì ném `UnauthorizedException`. Guard cũng dùng được cho WebSocket/microservice nhờ `ExecutionContext`.
+</Callout>
+
+<Callout type="pitfall">
+Làm auth bằng middleware thường phải tự khớp URL để bỏ qua route public; guard + decorator `@Public()` sạch hơn.
+</Callout>

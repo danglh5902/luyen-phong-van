@@ -1,0 +1,35 @@
+---
+title: "useRef khác useState thế nào? Khi nào dùng ref?"
+topic: react
+roles: [frontend, fullstack]
+level: junior
+tags: [hooks, useRef, useState]
+answer: "useState giữ giá trị giữa các lần render và đổi nó thì trigger re-render. useRef giữ một object mutable ref.current tồn tại suốt vòng đời, đổi ref.current không gây render. Dùng ref cho DOM node, timer id, giá trị không ảnh hưởng UI."
+---
+| | `useState` | `useRef` |
+|---|---|---|
+| Đổi giá trị | Re-render | Không re-render |
+| Cập nhật | Qua setter, theo lượt | Gán trực tiếp `ref.current` |
+| Dùng cho | Dữ liệu hiển thị trên UI | DOM, id timer, giá trị trước đó |
+
+```jsx
+function SearchBox() {
+  const inputRef = useRef(null);
+  const timerRef = useRef();
+  const onChange = () => {
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => search(inputRef.current.value), 300);
+  };
+  return <input ref={inputRef} onChange={onChange} />;
+}
+```
+
+Ref cũng dùng được cho input uncontrolled: đọc giá trị khi submit thay vì lưu từng ký tự vào state.
+
+<Callout type="pitfall">
+Đừng đọc/ghi `ref.current` trong lúc render (trừ khởi tạo lazy): kết quả render sẽ không thuần và khó dự đoán. Hãy ghi trong event handler hoặc effect.
+</Callout>
+
+<Callout type="followup">
+Nếu thay đổi giá trị cần hiển thị lên màn hình thì phải là state, không phải ref.
+</Callout>

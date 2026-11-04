@@ -1,0 +1,29 @@
+---
+title: "StrictMode render hai lần để làm gì? Component pure nghĩa là gì?"
+topic: react
+roles: [frontend, fullstack]
+level: senior
+tags: [strictmode, purity, useeffect]
+answer: "Ở dev, StrictMode gọi render (và updater, reducer, useMemo) hai lần để lộ side effect trong lúc render, và từ React 18 còn mount, unmount, mount lại effect để kiểm tra cleanup. Chỉ chạy ở development, không ảnh hưởng production."
+---
+Quy tắc: render phải **pure**, cùng props/state/context thì cho cùng JSX, không mutate biến ngoài, không gọi API, không đọc `Math.random()`/`Date.now()` trực tiếp để quyết định output.
+
+```jsx
+let count = 0;
+function Bad() {
+  count++;                 // mutate biến ngoài: StrictMode lộ ra (count tăng 2)
+  return <p>{count}</p>;
+}
+```
+
+Hai cơ chế kiểm tra (dev):
+1. **Double render**: render, updater function, `useMemo`/`useState` initializer chạy 2 lần, kết quả lần đầu bị bỏ.
+2. **Double effect (React 18+)**: mount, cleanup, mount lại để chắc rằng effect có cleanup đối xứng (hủy subscription, abort fetch).
+
+<Callout type="pitfall">
+Đừng "sửa" bằng cách tắt StrictMode hoặc dùng `useRef` đánh dấu đã chạy. Nếu effect lỗi khi chạy hai lần, nó thiếu cleanup (ví dụ listener chưa gỡ, connection chưa đóng) và sẽ lỗi khi component thật sự remount.
+</Callout>
+
+<Callout type="followup">
+React 19 StrictMode còn tái sử dụng kết quả `useMemo`/`useCallback` giữa hai lần render và double-invoke ref callback.
+</Callout>

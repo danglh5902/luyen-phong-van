@@ -1,0 +1,33 @@
+---
+title: "JWT vs session và bảo mật API Node.js (CORS, helmet, rate limit, SQL injection)"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [jwt, session, security, cors, helmet, sql-injection]
+answer: "Session lưu state ở server (dễ thu hồi, cần store chung như Redis); JWT tự chứa claim, stateless nhưng khó thu hồi trước hạn. Bảo mật cơ bản: cookie httpOnly/secure/sameSite, CORS whitelist, helmet đặt header, rate limit chống brute force, parameterized query chống SQL injection."
+---
+| | Session | JWT |
+|---|---|---|
+| State | Server giữ (Redis/DB) | Token tự chứa, server chỉ verify chữ ký |
+| Thu hồi | Xóa session là xong | Khó: cần blacklist hoặc token ngắn hạn + refresh token |
+| Scale | Cần store dùng chung | Không cần store |
+| Kích thước | Cookie chỉ chứa id | Token lớn hơn, gửi mỗi request |
+
+Payload JWT chỉ được mã hóa base64 (ai cũng đọc được), không chứa dữ liệu nhạy cảm. Luôn kiểm tra thuật toán, `exp`, `iss`. Lưu token trong cookie `httpOnly; Secure; SameSite` để giảm rủi ro XSS đánh cắp.
+
+```js
+app.use(helmet());                                   // header bảo mật (CSP, HSTS...)
+app.use(cors({ origin: ["https://app.example.com"], credentials: true }));
+app.use(rateLimit({ windowMs: 60_000, limit: 100 })); // express-rate-limit
+
+// SQL injection: tham số hóa, không nối chuỗi
+await db.query("SELECT * FROM users WHERE email = $1", [email]);
+```
+
+<Callout type="pitfall">
+CORS do trình duyệt thực thi, không phải cơ chế xác thực: curl hay server khác vẫn gọi được API. Vẫn phải kiểm tra auth/authorization phía server. Hash mật khẩu bằng bcrypt/argon2, không dùng MD5/SHA thuần.
+</Callout>
+
+<Callout type="followup">
+Rate limit nhiều instance cần store chung (Redis); đặt giới hạn chặt hơn cho endpoint login.
+</Callout>

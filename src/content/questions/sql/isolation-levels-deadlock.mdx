@@ -1,0 +1,29 @@
+---
+title: "Isolation level và deadlock trong SQL"
+topic: sql
+roles: [backend, devops]
+level: senior
+tags: [isolation, deadlock, transaction, mvcc]
+answer: "Isolation level quyết định hiện tượng đọc cho phép: dirty read, non-repeatable read, phantom read. Từ READ UNCOMMITTED đến SERIALIZABLE càng chặt càng ít bất thường nhưng giảm đồng thời. Deadlock xảy ra khi hai transaction giữ lock chờ nhau; tránh bằng thứ tự lock nhất quán, transaction ngắn, retry."
+---
+| Level | Dirty read | Non-repeatable | Phantom |
+|---|---|---|---|
+| READ UNCOMMITTED | có thể | có thể | có thể |
+| READ COMMITTED | không | có thể | có thể |
+| REPEATABLE READ | không | không | có thể (theo chuẩn) |
+| SERIALIZABLE | không | không | không |
+
+Thực tế khác chuẩn: PostgreSQL REPEATABLE READ (snapshot) không có phantom; MySQL InnoDB mặc định REPEATABLE READ dùng gap lock; mặc định PostgreSQL/Oracle là READ COMMITTED.
+
+```text
+T1: UPDATE accounts SET ... WHERE id = 1;   -- giữ lock row 1
+T2: UPDATE accounts SET ... WHERE id = 2;   -- giữ lock row 2
+T1: UPDATE accounts SET ... WHERE id = 2;   -- chờ T2
+T2: UPDATE accounts SET ... WHERE id = 1;   -- chờ T1 => deadlock
+```
+
+DB phát hiện và huỷ một transaction làm "nạn nhân".
+
+<Callout type="tip">
+Phòng tránh: luôn lock theo cùng thứ tự (ví dụ id tăng dần), giữ transaction ngắn, và bắt lỗi deadlock/serialization failure để retry.
+</Callout>

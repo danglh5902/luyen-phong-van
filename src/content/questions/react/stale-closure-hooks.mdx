@@ -1,0 +1,39 @@
+---
+title: "Stale closure trong React hooks là gì và xử lý ra sao?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [hooks, closure, useEffect]
+answer: "Mỗi lần render tạo ra closure riêng, nắm giá trị state/props của lần render đó. Callback dài hạn (setInterval, listener) với deps rỗng sẽ đọc giá trị cũ. Sửa bằng updater function, khai báo đủ deps, hoặc giữ giá trị mới nhất trong ref."
+---
+```jsx
+function Counter() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => {
+      console.log(count);        // luôn in 0: closure của lần render đầu
+      setCount(count + 1);       // luôn set thành 1
+    }, 1000);
+    return () => clearInterval(id);
+  }, []); // thiếu count
+}
+```
+
+Cách sửa, theo thứ tự ưu tiên:
+
+1. Updater: `setCount(c => c + 1)` rồi không cần `count` trong deps.
+2. Khai báo đầy đủ deps (`[count]`), chấp nhận effect chạy lại. Bật `react-hooks/exhaustive-deps`.
+3. Cần callback ổn định nhưng đọc giá trị mới nhất: lưu vào ref.
+
+```jsx
+const latest = useRef(count);
+useEffect(() => { latest.current = count; });
+useEffect(() => {
+  const id = setInterval(() => console.log(latest.current), 1000);
+  return () => clearInterval(id);
+}, []);
+```
+
+<Callout type="tip">
+React 19.2 có `useEffectEvent` cho đúng nhu cầu này: tách logic "đọc giá trị mới nhất" ra khỏi deps của effect.
+</Callout>

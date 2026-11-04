@@ -1,0 +1,29 @@
+---
+title: "Thiết kế dịch vụ rút gọn URL (URL shortener)"
+topic: system-design
+roles: [backend, fullstack]
+level: senior
+tags: [design, url-shortener, estimation, base62]
+answer: "Mỗi URL dài ánh xạ tới mã ngắn (base62, 7 ký tự cho khoảng 3.5 nghìn tỷ mã). Sinh mã bằng bộ đếm phân tán (ID generator) mã hoá base62 để tránh trùng. Ghi ít, đọc rất nhiều nên lưu key-value và cache Redis; redirect bằng HTTP 301 hoặc 302."
+---
+**Ước lượng**: giả sử 100 triệu URL mới mỗi tháng, tỷ lệ đọc/ghi 100:1, nên khoảng 40 ghi/s và 4.000 đọc/s. Mỗi bản ghi khoảng 500 byte, 5 năm khoảng 6 tỷ bản ghi, khoảng 3 TB.
+
+```text
+POST /shorten {url}  -> {short: "aZ3kP9x"}
+GET  /aZ3kP9x        -> 302 Location: https://long.example/...
+
+Client -> LB -> App -> Cache (Redis) -> DB (key-value: code -> long_url)
+```
+
+| Cách sinh mã | Ưu | Nhược |
+|---|---|---|
+| Hash (MD5 rồi cắt 7 ký tự) | không cần trạng thái | va chạm, phải kiểm tra lại |
+| Counter + base62 | không trùng | cần ID generator phân tán (Snowflake, range cấp phát) |
+| Mã ngẫu nhiên | khó đoán | phải kiểm tra trùng |
+
+- 301 (permanent) được trình duyệt cache nên giảm tải nhưng mất thống kê; 302 giữ được analytics.
+- Hết hạn (TTL), chống lạm dụng bằng rate limit, shard DB theo hash của code.
+
+<Callout type="followup">
+Hỏi tiếp: custom alias, thống kê click bất đồng bộ qua queue, chống spam và URL độc hại.
+</Callout>

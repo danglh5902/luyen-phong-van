@@ -1,0 +1,45 @@
+---
+title: "Server Component và Client Component trong Next.js App Router khác nhau thế nào?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: junior
+tags: [server-components, client-components, app-router]
+answer: "Trong App Router, mọi component mặc định là Server Component: chạy trên server, không gửi JS của nó xuống client, truy cập được DB/secret. Client Component (khai báo 'use client') dùng được state, effect, event handler và browser API, và được hydrate ở client."
+---
+| | Server Component | Client Component |
+|---|---|---|
+| Khai báo | mặc định | `'use client'` ở đầu file |
+| Chạy ở | server (build hoặc request) | server (prerender HTML) rồi hydrate ở client |
+| `useState`, `useEffect`, `onClick` | Không | Có |
+| Truy cập DB, secret, `fs` | Có | Không |
+| JS gửi xuống browser | Không | Có |
+
+```tsx
+// app/page.tsx (Server Component, có thể async)
+import Counter from "./counter";
+
+export default async function Page() {
+  const posts = await db.post.findMany();
+  return <Counter initial={posts.length} />;
+}
+
+// app/counter.tsx
+"use client";
+import { useState } from "react";
+export default function Counter({ initial }: { initial: number }) {
+  const [n, setN] = useState(initial);
+  return <button onClick={() => setN(n + 1)}>{n}</button>;
+}
+```
+
+<Callout type="tip">
+Mặc định dùng Server Component, chỉ đẩy `'use client'` xuống các "lá" cần tương tác để giảm JS bundle.
+</Callout>
+
+<Callout type="pitfall">
+Client Component vẫn được render trước thành HTML trên server (SSR), nên "Client" không có nghĩa là chỉ chạy ở browser. Truy cập `window` ở top-level sẽ lỗi khi prerender.
+</Callout>
+
+<Callout type="followup">
+Server Component có import được Client Component không? Có. Chiều ngược lại (Client import Server) thì file đó bị coi là Client; muốn lồng Server Component vào Client thì truyền qua `children`.
+</Callout>

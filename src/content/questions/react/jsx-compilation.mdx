@@ -1,0 +1,38 @@
+---
+title: "JSX là gì và được biên dịch ra sao?"
+topic: react
+roles: [frontend, fullstack]
+level: junior
+tags: [jsx, fundamentals]
+answer: "JSX là cú pháp mở rộng của JavaScript, không phải HTML. Compiler (Babel/SWC/TypeScript) biến mỗi thẻ JSX thành lời gọi hàm tạo element: `React.createElement` (cũ) hoặc `jsx()` từ `react/jsx-runtime` (React 17+ không cần import React)."
+---
+JSX chỉ là cú pháp; trình duyệt không hiểu nó nên phải được biên dịch trước khi chạy.
+
+```jsx
+// Bạn viết
+const el = <h1 className="title">Xin chào, {name}</h1>;
+
+// Cũ (classic runtime)
+React.createElement("h1", { className: "title" }, "Xin chào, ", name);
+
+// Mới (automatic runtime, React 17+)
+import { jsx as _jsx } from "react/jsx-runtime";
+_jsx("h1", { className: "title", children: ["Xin chào, ", name] });
+```
+
+Kết quả là một plain object mô tả UI (React element), không phải DOM node.
+
+| JSX | Khác HTML |
+|---|---|
+| `className`, `htmlFor` | thay cho `class`, `for` |
+| camelCase attribute/event | `onClick`, `tabIndex` |
+| Phải có một root | dùng Fragment `<>...</>` |
+| Thẻ phải đóng | `<img />`, `<input />` |
+
+<Callout type="pitfall">
+Trong JSX chỉ đặt được expression, không đặt được statement (`if`, `for`). Dùng toán tử ba ngôi, `&&` hoặc `map`.
+</Callout>
+
+<Callout type="followup">
+Tên component phải viết hoa (`<Card />`); chữ thường sẽ bị hiểu là thẻ DOM (`"card"`).
+</Callout>

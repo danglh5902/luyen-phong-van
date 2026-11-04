@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import Flashcard from '../../../../components/Flashcard';
+import { getCollection } from 'astro:content';
+import { roles, roleMap } from '../../../../data/roles';
+import { levels, buildTrack, type Level } from '../../../../data/tracks';
+
+export function getStaticPaths() {
+  return roles.flatMap((r) => levels.map((l) => ({ params: { role: r.id, level: l.id } })));
+}
+const { role: roleId, level: levelId } = Astro.params as { role: string; level: Level };
+const role = roleMap[roleId];
+const level = levels.find((l) => l.id === levelId)!;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const sections = buildTrack(roleId, levelId, await getCollection('questions'));
+const cards = sections.flatMap((s) => s.main).map((q) => ({ id: q.id, title: q.data.title, answer: q.data.answer, level: q.data.level, titleEn: q.data.titleEn, answerEn: q.data.answerEn }));
+---
+<BaseLayout title={`Flashcard ${level.name} ${role.name}`}>
+  <div class="mx-auto max-w-2xl">
+    <a href={`${base}/paths/${roleId}/${levelId}/`} class="text-sm font-medium text-indigo-600 hover:underline">← {level.name} {role.name}</a>
+    <h1 class="mb-8 mt-2 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">🃏 Flashcard {level.name} {role.name}</h1>
+  </div>
+  <Flashcard client:load cards={cards} base={base} color={role.color} />
+</BaseLayout>

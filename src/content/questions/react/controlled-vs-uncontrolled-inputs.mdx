@@ -1,0 +1,33 @@
+---
+title: "Controlled và uncontrolled component khác nhau thế nào?"
+topic: react
+roles: [frontend, fullstack]
+level: junior
+tags: [forms, input, state]
+answer: "Controlled: giá trị input nằm trong React state (`value` + `onChange`), React là nguồn sự thật. Uncontrolled: DOM tự giữ giá trị, bạn đọc qua `ref` hoặc `FormData` khi cần (`defaultValue` đặt giá trị ban đầu)."
+---
+```jsx
+// Controlled
+const [name, setName] = useState("");
+<input value={name} onChange={(e) => setName(e.target.value)} />
+
+// Uncontrolled
+const ref = useRef(null);
+<input defaultValue="An" ref={ref} />
+// đọc: ref.current.value
+```
+
+| | Controlled | Uncontrolled |
+|---|---|---|
+| Nguồn giá trị | React state | DOM |
+| Validate theo từng phím | Dễ | Khó hơn |
+| Re-render mỗi lần gõ | Có | Không |
+| Phù hợp | Form phản ứng tức thời | Form đơn giản, file input, tích hợp lib ngoài |
+
+<Callout type="pitfall">
+Đặt `value` mà thiếu `onChange` làm input chỉ đọc. Đổi `undefined` thành chuỗi (hoặc ngược lại) khiến React cảnh báo chuyển từ uncontrolled sang controlled; luôn khởi tạo state là `""`.
+</Callout>
+
+<Callout type="tip">
+`<input type="file" />` luôn là uncontrolled vì giá trị chỉ đọc được.
+</Callout>

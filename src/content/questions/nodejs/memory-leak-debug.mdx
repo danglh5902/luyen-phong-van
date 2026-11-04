@@ -1,0 +1,33 @@
+---
+title: "Memory leak trong Node.js: nguyên nhân phổ biến và cách debug?"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [memory-leak, debugging, heap, v8]
+answer: "Leak xảy ra khi object còn được tham chiếu nên GC không thu hồi: cache/Map không giới hạn, listener không gỡ, timer, closure giữ biến lớn, biến global. Debug bằng heap snapshot (--inspect + Chrome DevTools), so sánh nhiều snapshot và theo dõi process.memoryUsage()."
+---
+Nguyên nhân thường gặp:
+
+- Cache dạng `Map`/object không có giới hạn hoặc TTL (dùng LRU, hoặc `WeakMap` khi key là object).
+- `emitter.on` trong mỗi request mà không `off`: cảnh báo `MaxListenersExceededWarning` là dấu hiệu.
+- `setInterval` không `clearInterval`; closure giữ tham chiếu tới object lớn.
+- Mảng/biến global tích lũy (log, metric, session trong RAM).
+
+Quy trình điều tra:
+
+1. Quan sát `heapUsed` tăng đều sau mỗi lần GC (đường răng cưa đi lên), `process.memoryUsage()`.
+2. Chạy `node --inspect app.js`, mở `chrome://inspect`, tab Memory.
+3. Chụp snapshot, tạo tải, chụp lại; dùng "Comparison" để tìm object có số lượng tăng, xem Retainers để biết ai đang giữ.
+4. Có thể tạo snapshot từ xa bằng `v8.writeHeapSnapshot()`.
+
+```js
+const cache = new Map();
+app.get("/user/:id", async (req, res) => {
+  if (!cache.has(req.params.id)) cache.set(req.params.id, await load(req.params.id));
+  res.json(cache.get(req.params.id)); // leak: Map phình vô hạn
+});
+```
+
+<Callout type="pitfall">
+Tăng `--max-old-space-size` chỉ trì hoãn crash, không sửa leak. Ngoài ra RSS cao chưa chắc là leak: Buffer nằm ngoài heap V8 (external), và V8 chỉ GC khi cần.
+</Callout>

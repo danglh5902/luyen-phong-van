@@ -1,0 +1,26 @@
+---
+title: "Working directory, staging area và repository trong Git"
+topic: git
+roles: [backend, fullstack, devops, frontend]
+level: junior
+tags: [staging, add, commit, basics]
+answer: "File đi qua ba vùng: working directory (đang sửa), staging area/index (git add, chọn thay đổi sẽ vào commit tiếp theo) và repository (git commit lưu snapshot). Staging cho phép commit chỉ một phần thay đổi."
+---
+```bash
+git init                      # hoặc: git clone <url>
+git status                    # xem file ở vùng nào
+git add src/app.js            # đưa vào staging
+git add -p                    # chọn từng hunk
+git commit -m "feat: add login"
+git diff                      # working vs staging
+git diff --staged             # staging vs commit gần nhất
+git restore --staged app.js   # bỏ khỏi staging, giữ nguyên thay đổi
+```
+
+```text
+working directory --git add--> staging area --git commit--> repository
+```
+
+<Callout type="tip">
+Dùng `git add -p` để tách một đống thay đổi thành các commit nhỏ, mỗi commit một ý: lịch sử dễ review và dễ revert.
+</Callout>

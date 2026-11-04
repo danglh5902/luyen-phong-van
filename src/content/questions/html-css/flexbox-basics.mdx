@@ -1,0 +1,25 @@
+---
+title: "Flexbox: `justify-content`, `align-items` và `flex: 1` nghĩa là gì?"
+topic: html-css
+roles: [frontend, fullstack]
+level: mid
+tags: [flexbox, layout, flex-grow]
+answer: "justify-content căn theo trục chính, align-items theo trục chéo. flex là viết tắt của flex-grow, flex-shrink, flex-basis: grow chia phần dư, shrink thu nhỏ khi thiếu chỗ, basis là kích thước ban đầu. flex: 1 tương đương 1 1 0%."
+---
+```css
+.row { display: flex; gap: 12px; justify-content: space-between; align-items: center; }
+.main    { flex: 1; }          /* 1 1 0%: chiếm phần còn lại */
+.sidebar { flex: 0 0 240px; }  /* không grow/shrink, rộng 240px */
+.wrap    { flex-wrap: wrap; }
+```
+
+- Trục chính phụ thuộc `flex-direction` (row thì ngang, column thì dọc); `justify-content` luôn theo trục chính.
+- Flex item có `min-width: auto` nên nội dung dài có thể không co lại được.
+
+<Callout type="pitfall">
+Text dài hoặc `pre` làm flex item tràn: thêm `min-width: 0` (hoặc `overflow: hidden`) cho item để cho phép co.
+</Callout>
+
+<Callout type="followup">
+Flex hay grid? Flex cho layout một chiều (hàng hoặc cột, nội dung quyết định kích thước); grid cho layout hai chiều (hàng và cột cùng lúc).
+</Callout>

@@ -1,0 +1,27 @@
+---
+title: "JWT nên lưu ở đâu: localStorage hay cookie HttpOnly?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [jwt, authentication, security, cookie]
+answer: "localStorage dễ bị XSS đánh cắp token. Cookie HttpOnly + Secure + SameSite thì JS không đọc được nên an toàn hơn trước XSS nhưng cần chống CSRF. Cách phổ biến: access token ngắn hạn trong bộ nhớ, refresh token trong cookie HttpOnly và có rotation."
+---
+| Nơi lưu | Rủi ro chính | Ghi chú |
+|---|---|---|
+| `localStorage` | XSS đọc được token | Tiện, tự gắn header `Authorization` |
+| Memory (biến JS) | Mất khi reload | An toàn hơn, cần refresh để khôi phục |
+| Cookie `HttpOnly` | CSRF | Cần `SameSite`, CSRF token |
+
+```http
+Set-Cookie: refresh=...; HttpOnly; Secure; SameSite=Strict; Path=/auth/refresh
+Authorization: Bearer <access_token>
+```
+
+- JWT gồm header.payload.signature; payload chỉ được mã hóa base64url, không bí mật: đừng nhét dữ liệu nhạy cảm.
+- Access token sống ngắn (vài phút); refresh token dài hơn, xoay vòng mỗi lần dùng và thu hồi được ở server.
+- JWT stateless nên khó thu hồi trước hạn; cần denylist hoặc session phía server nếu yêu cầu logout tức thì.
+- Luôn kiểm tra chữ ký, `exp`, `aud`, `iss` và cố định thuật toán phía server.
+
+<Callout type="pitfall">
+Không có chỗ lưu nào "tuyệt đối an toàn" nếu trang bị XSS. Hãy ưu tiên phòng XSS (CSP, escape), token ngắn hạn và cookie HttpOnly.
+</Callout>

@@ -1,0 +1,30 @@
+---
+title: "Dynamic route và generateStaticParams trong App Router dùng thế nào?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: junior
+tags: [dynamic-routes, ssg, generatestaticparams]
+answer: "Thư mục `[slug]` tạo route động; `[...slug]` bắt nhiều đoạn, `[[...slug]]` bắt cả đường dẫn gốc. `generateStaticParams` trả danh sách param để pre-render lúc build. Từ Next 15, `params` là Promise nên phải `await`."
+---
+```tsx
+// app/blog/[slug]/page.tsx
+export async function generateStaticParams() {
+  const posts = await getPosts();
+  return posts.map((p) => ({ slug: p.slug }));
+}
+
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params; // Next 14: params là object thường
+  const post = await getPost(slug);
+  if (!post) notFound();
+  return <article>{post.title}</article>;
+}
+```
+
+- Param không có trong `generateStaticParams` mặc định vẫn render theo yêu cầu rồi cache (`dynamicParams = true`); đặt `false` để trả 404.
+- `generateStaticParams` ở layout cha có thể lồng với route con.
+- Dùng `notFound()` để hiển thị `not-found.tsx`.
+
+<Callout type="pitfall">
+Next 15 không `await params` vẫn chạy tạm (có cảnh báo, truy cập đồng bộ bị deprecate) nhưng sẽ bị bỏ ở bản sau; dùng codemod `next-async-request-api`.
+</Callout>

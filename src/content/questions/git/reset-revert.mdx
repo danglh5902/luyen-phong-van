@@ -1,0 +1,18 @@
+---
+title: "git reset, revert và checkout/restore khác nhau thế nào?"
+topic: git
+roles: [frontend, backend, fullstack, devops]
+level: junior
+tags: [undo]
+answer: "reset di chuyển nhánh về commit cũ (viết lại lịch sử); revert tạo commit mới đảo ngược thay đổi (an toàn với nhánh chung); restore khôi phục file trong working tree."
+---
+```bash
+git reset --soft HEAD~1    # bỏ commit, giữ thay đổi trong staging
+git reset --hard HEAD~1    # bỏ commit và xóa luôn thay đổi (nguy hiểm)
+git revert <sha>           # tạo commit đảo ngược, dùng cho nhánh đã push
+git restore file.txt       # bỏ thay đổi chưa commit của 1 file
+```
+
+<Callout type="tip">
+Lỡ `reset --hard`? Dùng `git reflog` để tìm lại commit cũ.
+</Callout>

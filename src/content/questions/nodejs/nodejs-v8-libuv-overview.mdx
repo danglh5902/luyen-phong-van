@@ -1,0 +1,30 @@
+---
+title: "Node.js là gì? Vai trò của V8 và libuv"
+topic: nodejs
+roles: [backend, fullstack]
+level: junior
+tags: [nodejs, v8, libuv, runtime]
+answer: "Node.js là runtime JavaScript chạy ngoài trình duyệt. V8 biên dịch và thực thi JS; libuv cung cấp event loop, thread pool và I/O bất đồng bộ đa nền tảng. Node bind hai thứ này lại và thêm API như fs, http, net."
+---
+| Thành phần | Vai trò |
+|---|---|
+| V8 | Engine của Chrome: parse, JIT compile JS, quản lý heap và garbage collection |
+| libuv | Event loop, thread pool (mặc định 4 thread), socket, file system, DNS, timer |
+| Node bindings (C++) | Cầu nối giữa JS và V8/libuv/OpenSSL/zlib... |
+| Core modules | `fs`, `http`, `net`, `crypto`, `stream`, `path`... |
+
+JS của bạn chạy trên một thread chính. Các tác vụ nặng I/O được giao cho OS (socket) hoặc thread pool của libuv (fs, dns.lookup, crypto, zlib), xong thì callback được đưa lại event loop.
+
+```js
+const fs = require('fs');
+fs.readFile(__filename, () => console.log('đọc xong'));  // libuv thread pool
+console.log('chạy trước');
+```
+
+<Callout type="tip">
+Node phù hợp workload I/O-bound (API, proxy, realtime). Tác vụ CPU-bound nặng sẽ chặn event loop, nên cần `worker_threads` hoặc tách service.
+</Callout>
+
+<Callout type="pitfall">
+Node không "đơn luồng hoàn toàn": JS đơn luồng, nhưng runtime vẫn có thread pool và các thread của V8 (GC, compile).
+</Callout>

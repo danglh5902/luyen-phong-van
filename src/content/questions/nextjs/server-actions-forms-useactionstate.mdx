@@ -1,0 +1,38 @@
+---
+title: "Form với Server Actions: useActionState, useFormStatus và progressive enhancement?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: mid
+tags: [server-actions, forms, react-19]
+answer: "Truyền Server Action vào `action` của `<form>`; `useActionState` (React 19, trước là `useFormState`) giữ state trả về như lỗi validation, `useFormStatus` (phải nằm trong form con) cho biết `pending`. Form hoạt động cả khi chưa hydrate (progressive enhancement)."
+---
+```tsx
+// actions.ts
+"use server";
+export async function signup(prev: { error?: string }, formData: FormData) {
+  const email = String(formData.get("email"));
+  if (!email.includes("@")) return { error: "Email không hợp lệ" };
+  await createUser(email);
+  redirect("/welcome");
+}
+
+// form.tsx
+"use client";
+function Submit() {
+  const { pending } = useFormStatus();   // phải là con của <form>
+  return <button disabled={pending}>Đăng ký</button>;
+}
+export function Form() {
+  const [state, action] = useActionState(signup, {});
+  return <form action={action}><input name="email" />{state.error}<Submit /></form>;
+}
+```
+
+- Hàm action nhận `FormData`; với `useActionState`, tham số đầu là state trước đó.
+- `redirect()` ném lỗi đặc biệt nên đừng bọc trong `try/catch` (hoặc ném lại).
+- Validate lại bằng Zod ở server và kiểm tra quyền, vì action là endpoint POST công khai.
+- Cần optimistic UI thì kết hợp `useOptimistic`.
+
+<Callout type="pitfall">
+`useFormStatus` đặt cùng component với `<form>` luôn trả `pending = false`; phải tách thành component con.
+</Callout>

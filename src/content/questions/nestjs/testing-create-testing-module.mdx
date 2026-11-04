@@ -1,0 +1,37 @@
+---
+title: "Unit test service NestJS với Test.createTestingModule và mock provider"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [testing, jest, mock]
+answer: "Test.createTestingModule dựng module thu nhỏ chỉ với provider cần test; thay dependency thật bằng mock qua { provide, useValue } hoặc overrideProvider(). Gọi compile() rồi module.get() để lấy instance. E2E dùng createNestApplication kèm supertest."
+---
+```ts
+describe('UsersService', () => {
+  let service: UsersService;
+  const repo = { findOneBy: jest.fn() };
+
+  beforeEach(async () => {
+    const mod = await Test.createTestingModule({
+      providers: [
+        UsersService,
+        { provide: getRepositoryToken(User), useValue: repo },
+      ],
+    }).compile();
+    service = mod.get(UsersService);
+  });
+
+  it('ném NotFound khi không có user', async () => {
+    repo.findOneBy.mockResolvedValue(null);
+    await expect(service.find(1)).rejects.toThrow(NotFoundException);
+  });
+});
+```
+
+<Callout type="tip">
+Với provider scope REQUEST/TRANSIENT, `get()` không dùng được, phải dùng `await module.resolve(Cls)`.
+</Callout>
+
+<Callout type="followup">
+E2E: import AppModule thật, `.overrideProvider(MailService).useValue(fake)`, `app.init()`, rồi `request(app.getHttpServer())`.
+</Callout>

@@ -1,0 +1,46 @@
+---
+title: "Các utility types thường dùng: Partial, Pick, Omit, Record, ReturnType"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [utility-types, generics]
+answer: "Utility types là generic dựng sẵn để biến đổi type: `Partial<T>` làm mọi field optional, `Pick`/`Omit` chọn/loại field, `Record<K, V>` tạo object map, `ReturnType<F>` lấy kiểu trả về của hàm, `Readonly`, `Required`, `NonNullable`, `Awaited`... Chúng chỉ tồn tại ở compile time."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="ts" code={`interface User { id: number; name: string; email: string; }
+
+type Patch = Partial<Pick<User, "name" | "email">>;
+type PublicUser = Omit<User, "email">;
+type Role = "admin" | "user";
+
+const patch: Patch = { name: "An" };
+const limits: Record<Role, number> = { admin: 100, user: 10 };
+const pub: PublicUser = { id: 1, name: "An" };
+
+function makeResult() { return { ok: true, n: 1 }; }
+type Result = ReturnType<typeof makeResult>;
+const r: Result = { ok: false, n: 2 };
+
+console.log(patch, limits, pub, r);`} />
+
+| Utility | Tác dụng |
+|---|---|
+| `Partial<T>` / `Required<T>` | thêm / bỏ dấu `?` mọi field |
+| `Readonly<T>` | mọi field readonly |
+| `Pick<T, K>` / `Omit<T, K>` | giữ / bỏ các key K |
+| `Record<K, V>` | object với key K, value V |
+| `Exclude<U, X>` / `Extract<U, X>` | loại / giữ thành viên của union |
+| `NonNullable<T>` | bỏ null và undefined |
+| `ReturnType<F>` / `Parameters<F>` | kiểu trả về / tuple tham số |
+| `Awaited<T>` | kiểu sau khi await Promise |
+
+<Callout type="pitfall">
+`Partial` và `Readonly` chỉ áp dụng nông (shallow), field lồng nhau không đổi. `Omit` với key không tồn tại không báo lỗi, vì `K extends keyof any`; dùng `Pick<T, Exclude<keyof T, K>>` nếu cần chặt hơn.
+</Callout>
+
+<Callout type="followup">
+Tự cài `Partial<T>` bằng mapped type? Đáp án: `type MyPartial<T> = { [K in keyof T]?: T[K] }`.
+</Callout>

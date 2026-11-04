@@ -1,0 +1,28 @@
+---
+title: "Route group và private folder trong App Router dùng để làm gì?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: junior
+tags: [route-groups, project-structure, app-router]
+answer: "Thư mục `(group)` gom route theo nhóm mà không đổi URL, cho phép mỗi nhóm có layout riêng. Thư mục `_private` bị loại khỏi routing, dùng để đặt code dùng chung ngay cạnh route (component, helper)."
+---
+```text
+app/
+  (marketing)/
+    layout.tsx        # layout cho trang marketing
+    about/page.tsx    # URL: /about
+  (shop)/
+    layout.tsx        # layout khác
+    cart/page.tsx     # URL: /cart
+  dashboard/
+    _components/Chart.tsx   # không thành route
+    page.tsx
+```
+
+- `(group)`: không xuất hiện trong URL; dùng để tách layout, hoặc nhiều root layout (mỗi group một `layout.tsx` gốc có `html`/`body`).
+- `_folder`: private, mọi thứ bên trong không trở thành route; dùng `%5F` nếu cần URL bắt đầu bằng gạch dưới.
+- Trong `app/`, file chỉ được phục vụ khi tên là `page` hoặc `route`, nên colocation an toàn.
+
+<Callout type="pitfall">
+Hai route ở hai group khác nhau nhưng cùng URL (ví dụ `(a)/x/page.tsx` và `(b)/x/page.tsx`) gây xung đột và lỗi build.
+</Callout>

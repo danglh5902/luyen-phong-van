@@ -1,0 +1,31 @@
+---
+title: "layout, template, loading, error và not-found trong App Router dùng để làm gì?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: junior
+tags: [layout, template, loading, error-boundary, app-router]
+answer: "layout giữ state và không remount khi điều hướng giữa các route con; template remount mỗi lần điều hướng. loading.tsx là fallback Suspense bọc page, error.tsx là Error Boundary (phải là Client Component), not-found.tsx hiển thị khi gọi notFound() hoặc không khớp route."
+---
+| File | Vai trò | Lưu ý |
+|---|---|---|
+| `layout.tsx` | UI chung, giữ state khi đổi route con | Root layout bắt buộc có `html` và `body` |
+| `template.tsx` | Giống layout nhưng tạo instance mới mỗi lần điều hướng | Dùng cho animation vào/ra, reset state, log pageview |
+| `loading.tsx` | Fallback tự động bọc `page` trong `Suspense` | Cho phép streaming và hiển thị UI tức thì |
+| `error.tsx` | Error Boundary cho segment con | Phải là `'use client'`, nhận `error` và `reset` |
+| `not-found.tsx` | UI 404 | Kích hoạt bằng `notFound()` |
+
+```tsx
+// app/dashboard/error.tsx
+"use client";
+export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+  return <button onClick={() => reset()}>Thử lại: {error.message}</button>;
+}
+```
+
+<Callout type="pitfall">
+`error.tsx` không bắt được lỗi của `layout.tsx` cùng segment (vì boundary nằm bên trong layout). Dùng `error.tsx` ở segment cha, hoặc `global-error.tsx` cho root layout.
+</Callout>
+
+<Callout type="followup">
+Layout không nhận `searchParams` vì không re-render khi query đổi. Cần đọc query ở layout thì dùng Client Component với `useSearchParams`.
+</Callout>

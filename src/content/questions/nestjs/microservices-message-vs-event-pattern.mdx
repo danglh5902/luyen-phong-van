@@ -1,0 +1,33 @@
+---
+title: "NestJS microservices: transport, @MessagePattern khác @EventPattern thế nào?"
+topic: nestjs
+roles: [backend, fullstack]
+level: senior
+tags: [microservices, message-pattern, event-pattern, transport]
+answer: "@MessagePattern là request-response: client dùng send(), handler trả giá trị và client chờ. @EventPattern là fire-and-forget: client dùng emit(), không có response, phù hợp thông báo sự kiện. Transport gồm TCP, Redis, NATS, MQTT, RabbitMQ, Kafka, gRPC."
+---
+| | @MessagePattern | @EventPattern |
+|---|---|---|
+| Client | `client.send()` | `client.emit()` |
+| Response | Có (Observable) | Không |
+| Dùng cho | Query/command cần kết quả | Sự kiện, nhiều consumer |
+
+```ts
+// service nhận
+@MessagePattern({ cmd: 'sum' })
+sum(data: number[]) { return data.reduce((a, b) => a + b, 0); }
+
+@EventPattern('user_created')
+onCreated(data: { id: number }) { /* không return */ }
+
+// client
+const total = await firstValueFrom(this.client.send({ cmd: 'sum' }, [1, 2]));
+this.client.emit('user_created', { id: 1 });
+```
+
+- Khởi tạo bằng `NestFactory.createMicroservice` hoặc `app.connectMicroservice` (hybrid app).
+- Chọn transport: Kafka/RabbitMQ khi cần độ bền và redelivery; TCP/Redis cho đơn giản; gRPC cho contract chặt.
+
+<Callout type="pitfall">
+`send()` trả Observable lạnh: không subscribe (hoặc `firstValueFrom`) thì message không được gửi. Với event cần xử lý lỗi/retry và idempotency vì có thể bị giao lại.
+</Callout>

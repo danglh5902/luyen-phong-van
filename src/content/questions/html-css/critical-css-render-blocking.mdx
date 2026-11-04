@@ -1,0 +1,32 @@
+---
+title: "CSS chặn render như thế nào và critical CSS giúp gì?"
+topic: html-css
+roles: [frontend, fullstack]
+level: senior
+tags: [critical-css, render-blocking, performance]
+answer: "CSS là render-blocking: trình duyệt không paint cho đến khi tải và parse xong CSSOM của các stylesheet trong head. Critical CSS inline phần style above-the-fold vào head và nạp phần còn lại bất đồng bộ để giảm FCP/LCP, đổi lại phức tạp hơn khi build và cache."
+---
+```html
+<head>
+  <style>/* critical: header, hero, font-size, layout khung */</style>
+
+  <link rel="preload" href="/app.css" as="style" onload="this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="/app.css" /></noscript>
+
+  <!-- Chỉ chặn khi điều kiện media khớp -->
+  <link rel="stylesheet" href="/print.css" media="print" />
+</head>
+```
+
+- CSS chặn render nhưng không chặn parse HTML; tuy vậy `script` đồng bộ phía sau stylesheet bị chặn chờ CSSOM.
+- Giảm CSS: tree-shake/purge, tách theo route, minify, nén brotli.
+- Dùng `media` attribute để stylesheet không phù hợp không chặn render.
+- Font: `font-display: swap` và preload font quan trọng để tránh chữ vô hình.
+
+<Callout type="pitfall">
+Inline quá nhiều CSS làm phình HTML, không cache được riêng và có thể gây FOUC nếu phần non-critical nạp trễ làm layout nhảy (CLS). Công cụ như Critters hoặc Critical tự trích xuất lúc build.
+</Callout>
+
+<Callout type="tip">
+Với HTTP/2 và HTTP/3, chia nhỏ CSS theo route thường hiệu quả hơn gộp một file lớn.
+</Callout>

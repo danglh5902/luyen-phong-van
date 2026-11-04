@@ -1,0 +1,39 @@
+---
+title: "Variance: covariance, contravariance, invariance trong TypeScript"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [variance, covariance, contravariance, soundness]
+answer: "Covariance: `Box<Dog>` gán được cho `Box<Animal>` (vị trí đầu ra/chỉ đọc). Contravariance: tham số hàm đảo chiều, `(a: Animal) => void` gán được cho `(d: Dog) => void` (bật bằng `strictFunctionTypes`). Invariance: cần cả hai chiều. TS cố ý lỏng với mảng và method (bivariant) nên không hoàn toàn sound."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ: mảng covariant không an toàn
+
+<Runnable client:visible lang="ts" code={`class Animal { name = "animal"; }
+class Dog extends Animal { bark() { return "woof"; } }
+
+const dogs: Dog[] = [new Dog()];
+const animals: Animal[] = dogs;     // TS cho phép (covariant)
+animals.push(new Animal());         // ghi Animal vào mảng Dog[]
+console.log(dogs[1] instanceof Dog); // false: dogs[1].bark() sẽ nổ runtime`} />
+
+## Quy tắc
+
+| Vị trí của T | Variance | Ví dụ |
+|---|---|---|
+| Chỉ đầu ra (return, readonly) | covariant | `ReadonlyArray<T>`, `() => T` |
+| Chỉ đầu vào (tham số) | contravariant | `(x: T) => void` |
+| Cả vào lẫn ra | invariant | `T[]` (lý thuyết), `{ get(): T; set(v: T): void }` |
+
+- Với `strictFunctionTypes`, tham số của function type được kiểm tra contravariant; nhưng **method** (cú pháp `m(x: T): void`) vẫn bivariant để tương thích với mảng và DOM.
+- TS 4.7 cho annotation tường minh trên generic: `interface Producer<out T>`, `Consumer<in T>`, `Both<in out T>`, giúp kiểm tra nhanh và khai báo ý định.
+- Quy tắc nhớ: producer (đọc) covariant, consumer (ghi/nhận) contravariant.
+
+<Callout type="tip">
+Muốn an toàn, nhận tham số kiểu `readonly Animal[]` khi chỉ đọc: lúc đó covariance là hợp lệ vì không thể `push`.
+</Callout>
+
+<Callout type="pitfall">
+Khai báo callback prop bằng cú pháp method (`onChange(v: T): void`) thay vì property (`onChange: (v: T) => void`) làm tham số bị kiểm tra bivariant, nên nhận cả handler quá hẹp mà không báo lỗi.
+</Callout>

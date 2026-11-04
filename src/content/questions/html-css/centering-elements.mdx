@@ -1,0 +1,28 @@
+---
+title: "Có những cách nào để căn giữa một phần tử theo cả hai chiều?"
+topic: html-css
+roles: [frontend, fullstack]
+level: junior
+tags: [centering, flexbox, grid, layout]
+answer: "Cách gọn nhất là flex (justify-content và align-items: center) hoặc grid với place-items: center trên container. Với phần tử đặt tuyệt đối dùng inset: 0 kèm margin: auto hoặc top/left 50% kết hợp transform translate(-50%, -50%)."
+---
+```css
+/* 1. Flex */
+.box { display: flex; justify-content: center; align-items: center; }
+
+/* 2. Grid */
+.box { display: grid; place-items: center; }
+
+/* 3. Absolute + transform */
+.child { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+/* 4. Absolute + inset + margin auto (cần width/height) */
+.child { position: absolute; inset: 0; margin: auto; width: 200px; height: 100px; }
+
+/* Chỉ theo chiều ngang: block có width */
+.block { width: 300px; margin-inline: auto; }
+```
+
+<Callout type="tip">
+Văn bản inline: `text-align: center`. Container cần có chiều cao (ví dụ `min-height: 100vh`) thì căn giữa dọc mới có ý nghĩa.
+</Callout>

@@ -1,0 +1,33 @@
+---
+title: "Compound component và composition: thiết kế API component linh hoạt?"
+topic: react
+roles: [frontend, fullstack]
+level: senior
+tags: [composition, context, design-patterns]
+answer: "Compound component là nhóm component cùng làm việc qua Context ngầm (như `Tabs`, `Tabs.Tab`), cho người dùng tự sắp xếp JSX thay vì truyền hàng chục props. Ưu tiên composition (`children`, slot) hơn prop cấu hình và hơn kế thừa."
+---
+```tsx
+const TabsCtx = createContext<{ active: string; set: (v: string) => void } | null>(null);
+
+function Tabs({ defaultValue, children }: { defaultValue: string; children: ReactNode }) {
+  const [active, set] = useState(defaultValue);
+  const value = useMemo(() => ({ active, set }), [active]);
+  return <TabsCtx.Provider value={value}>{children}</TabsCtx.Provider>;
+}
+function Tab({ id, children }: { id: string; children: ReactNode }) {
+  const ctx = useContext(TabsCtx)!;
+  return <button aria-selected={ctx.active === id} onClick={() => ctx.set(id)}>{children}</button>;
+}
+Tabs.Tab = Tab;
+```
+
+Dùng: `<Tabs defaultValue="a"><Tabs.Tab id="a">A</Tabs.Tab></Tabs>`.
+
+- Ưu điểm: API khai báo, linh hoạt layout, phụ thuộc ẩn được đóng gói.
+- Nhược điểm: phụ thuộc Context nên component con phải nằm trong cha; cần báo lỗi rõ khi dùng sai.
+- Cho phép cả controlled (`value`/`onChange`) và uncontrolled (`defaultValue`).
+- Mẫu tương tự: render props, slot qua props `header`/`footer`, headless UI (Radix, Headless UI).
+
+<Callout type="tip">
+Bọc `useContext` vào hook có kiểm tra `null` và ném lỗi mô tả để dev biết thiếu Provider.
+</Callout>

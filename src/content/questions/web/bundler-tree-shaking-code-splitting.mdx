@@ -1,0 +1,39 @@
+---
+title: "Bundler (Webpack/Vite), tree-shaking và code splitting hoạt động thế nào?"
+topic: web
+roles: [frontend, fullstack]
+level: senior
+tags: [bundler, webpack, vite, tree-shaking, code-splitting]
+answer: "Bundler gộp module và tối ưu (minify, chia chunk). Tree-shaking loại code export không dùng, dựa vào ES Modules tĩnh và cờ sideEffects. Code splitting chia bundle thành chunk tải khi cần bằng dynamic import(). Vite dev dùng native ESM + esbuild nên khởi động nhanh, build production dùng Rollup."
+---
+```js
+// Dynamic import: tạo chunk riêng, tải khi cần
+button.addEventListener("click", async () => {
+  const { renderChart } = await import("./chart.js");
+  renderChart();
+});
+```
+
+```json
+{ "sideEffects": ["*.css"] }
+```
+
+- Tree-shaking cần ESM (`import`/`export`) vì phân tích tĩnh được; CommonJS (`require`) thì khó loại bỏ.
+- `sideEffects: false` báo bundler rằng import mà không dùng export có thể bỏ nguyên module.
+- Import cả thư viện (`import _ from "lodash"`) làm phình bundle; dùng bản ESM hoặc import theo hàm (`lodash-es`).
+- Code splitting theo route (`React.lazy`, router lazy) và theo vendor/chunk dùng chung; kèm `rel="modulepreload"`/prefetch để giảm độ trễ.
+- Hash trong tên file (`[contenthash]`) cho phép cache dài hạn.
+
+| | Webpack | Vite |
+|---|---|---|
+| Dev server | Bundle trước | Native ESM, transform theo yêu cầu |
+| Prod build | Webpack | Rollup |
+| Cấu hình | Nhiều, linh hoạt | Ít, mặc định tốt |
+
+<Callout type="tip">
+Phân tích bundle bằng `webpack-bundle-analyzer` hoặc `rollup-plugin-visualizer` để tìm dependency nặng; so sánh trước/sau khi thêm thư viện mới.
+</Callout>
+
+<Callout type="pitfall">
+Code splitting quá nhỏ tạo nhiều request và waterfall; cân bằng giữa số chunk và kích thước.
+</Callout>

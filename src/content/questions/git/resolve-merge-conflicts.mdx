@@ -1,0 +1,31 @@
+---
+title: "Giải quyết merge conflict như thế nào?"
+topic: git
+roles: [backend, fullstack, devops, frontend]
+level: junior
+tags: [conflict, merge, mergetool]
+answer: "Conflict xảy ra khi hai nhánh sửa cùng vùng dòng. Mở file có marker conflict, chọn nội dung đúng, xoá marker, git add file rồi git commit (hoặc git rebase --continue). Có thể huỷ bằng git merge --abort."
+---
+```text
+<<<<<<< HEAD
+timeout = 30
+=======
+timeout = 60
+>>>>>>> feature/retry
+```
+
+```bash
+git status                  # liệt kê file "both modified"
+# sửa file, xoá các dòng marker
+git add config.ini
+git commit                  # hoàn tất merge
+git merge --abort           # bỏ merge, quay về trạng thái trước
+git checkout --theirs file  # lấy bản của nhánh kia (--ours: bản của nhánh hiện tại)
+```
+
+- Khi rebase, `ours` và `theirs` bị đảo nghĩa: `ours` là nhánh đích đang được replay lên.
+- `git config rerere.enabled true` ghi nhớ cách giải để áp dụng lại.
+
+<Callout type="tip">
+Giảm conflict bằng cách merge/rebase thường xuyên từ nhánh chính, giữ PR nhỏ và tránh reformat hàng loạt trong cùng PR với logic.
+</Callout>

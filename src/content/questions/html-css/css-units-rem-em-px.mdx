@@ -1,0 +1,26 @@
+---
+title: "So sánh `px`, `em`, `rem`, `%`, `vh` và khi nào dùng từng loại?"
+topic: html-css
+roles: [frontend, fullstack]
+level: junior
+tags: [units, rem, em, responsive]
+answer: "px là đơn vị tuyệt đối. rem tương đối với font-size của html, em tương đối với font-size của chính phần tử (hoặc cha khi dùng cho font-size), % theo cha, vh/vw theo viewport. rem phù hợp font và spacing để tôn trọng cài đặt cỡ chữ của người dùng."
+---
+| Đơn vị | Tương đối với |
+|---|---|
+| `px` | Không (CSS pixel) |
+| `rem` | `font-size` của `html` (mặc định 16px) |
+| `em` | `font-size` của phần tử (với `font-size` thì của cha) |
+| `%` | Thuộc tính tương ứng của cha |
+| `vh` / `vw` | 1% chiều cao / rộng viewport |
+
+```css
+html { font-size: 100%; }      /* tôn trọng cài đặt trình duyệt */
+h1   { font-size: 2rem; }
+.btn { padding: 0.5em 1em; }   /* co giãn theo cỡ chữ của nút */
+.hero { min-height: 100dvh; }  /* dvh: bỏ qua thanh địa chỉ mobile */
+```
+
+<Callout type="pitfall">
+`em` lồng nhau sẽ nhân dồn (cha 1.2em, con 1.2em thành 1.44 lần). Trên mobile `100vh` có thể bị thanh địa chỉ che; ưu tiên `dvh`/`svh`.
+</Callout>

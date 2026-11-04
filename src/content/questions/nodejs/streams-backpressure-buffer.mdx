@@ -1,0 +1,30 @@
+---
+title: "Streams, backpressure và Buffer trong Node.js"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [streams, backpressure, buffer]
+answer: "Stream xử lý dữ liệu theo từng chunk nên dùng ít bộ nhớ với file/response lớn. Backpressure là cơ chế báo bên ghi chậm để bên đọc tạm dừng (write() trả false, chờ drain); pipeline() xử lý việc này và dọn lỗi. Buffer là vùng nhớ nhị phân kích thước cố định."
+---
+```js
+import { createReadStream, createWriteStream } from "node:fs";
+import { pipeline } from "node:stream/promises";
+import { createGzip } from "node:zlib";
+
+await pipeline(
+  createReadStream("big.log"),
+  createGzip(),
+  createWriteStream("big.log.gz")
+); // tự xử lý backpressure, đóng stream khi lỗi
+```
+
+Backpressure thủ công: `if (!writable.write(chunk)) await once(writable, "drain")`. Ngưỡng là `highWaterMark` (mặc định 16 KiB với byte stream, 16 object với object mode). `pipe()` cũng xử lý backpressure nhưng không tự dọn khi lỗi.
+
+Buffer:
+- `Buffer.from("xin chào", "utf8")`, `buf.toString("base64")`, `Buffer.concat([a, b])`.
+- `Buffer.alloc(n)` được xóa về 0; `Buffer.allocUnsafe(n)` nhanh hơn nhưng có thể chứa dữ liệu cũ trong bộ nhớ, chỉ dùng khi sẽ ghi đè hết.
+- `buf.length` là số byte, không phải số ký tự.
+
+<Callout type="pitfall">
+`fs.readFile` cho file lớn đọc cả file vào RAM; `res.end(bigBuffer)` cũng vậy. Dùng stream. Ghi trong vòng lặp mà bỏ qua giá trị trả về của `write()` làm bộ nhớ phình ra.
+</Callout>

@@ -1,0 +1,29 @@
+---
+title: "Xem log và debug container đang lỗi như thế nào?"
+topic: docker
+roles: [backend, devops]
+level: mid
+tags: [debug, logs, inspect, troubleshooting]
+answer: "Bắt đầu với docker logs để xem stdout/stderr, docker ps -a và exit code để biết lý do dừng, docker inspect xem cấu hình, docker exec -it vào shell, docker stats xem tài nguyên. App nên ghi log ra stdout/stderr để logging driver thu thập."
+---
+```bash
+docker ps -a                                  # thấy Exited (1) hay (137)
+docker logs --tail 100 -f web
+docker inspect -f '{{.State.ExitCode}} {{.State.OOMKilled}}' web
+docker exec -it web sh
+docker stats --no-stream
+docker run --rm -it --entrypoint sh myimg     # container chết ngay: ghi đè entrypoint để vào xem
+```
+
+| Exit code | Ý nghĩa thường gặp |
+|---|---|
+| 0 | kết thúc bình thường |
+| 1 | lỗi ứng dụng |
+| 137 | bị SIGKILL, thường do OOM hoặc `docker kill` |
+| 143 | nhận SIGTERM |
+
+- Logging driver mặc định `json-file` không tự xoay vòng: đặt `max-size`, `max-file` để tránh đầy đĩa.
+
+<Callout type="tip">
+Image distroless không có shell: dùng `docker debug` hoặc gắn container debug chung namespace (`--pid=container:web --network=container:web`).
+</Callout>

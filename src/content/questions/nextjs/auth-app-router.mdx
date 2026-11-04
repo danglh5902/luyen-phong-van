@@ -1,0 +1,40 @@
+---
+title: "Triển khai authentication/authorization trong App Router đúng cách như thế nào?"
+topic: nextjs
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [auth, session, data-access-layer, middleware, cookies]
+answer: "Lưu session trong cookie httpOnly, secure, sameSite. Middleware chỉ kiểm tra sơ bộ (optimistic) để redirect; kiểm tra thật phải đặt gần dữ liệu, trong Data Access Layer, Route Handler và Server Action. Không kiểm tra auth trong layout vì layout không re-render khi điều hướng."
+---
+```ts
+// lib/dal.ts
+import "server-only";
+import { cache } from "react";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+export const verifySession = cache(async () => {
+  const token = (await cookies()).get("session")?.value; // Next 14: bỏ await
+  const session = token ? await decrypt(token) : null;
+  if (!session) redirect("/login");
+  return session;
+});
+
+export async function getOrders() {
+  const { userId } = await verifySession();
+  return db.order.findMany({ where: { userId } }); // authz theo chủ sở hữu
+}
+```
+
+- Tầng 1 (middleware): đọc cookie, redirect nhanh, không gọi DB.
+- Tầng 2 (DAL): `verifySession` bọc `cache` của React để dedupe trong một request.
+- Tầng 3 (Server Action/Route Handler): kiểm tra lại, vì chúng là endpoint public.
+- Thư viện: Auth.js, Clerk, hoặc tự làm với JWT (`jose`) và cookie.
+
+<Callout type="pitfall">
+Layout không render lại khi chuyển giữa các route con (partial rendering), nên check auth trong layout có thể bị bỏ qua. Check trong từng page hoặc ở DAL.
+</Callout>
+
+<Callout type="followup">
+Dùng `cookies()` làm route thành dynamic. Với trang cá nhân hóa điều này là đúng, nhưng trang công khai nên tách phần theo user ra Suspense hoặc Client Component.
+</Callout>

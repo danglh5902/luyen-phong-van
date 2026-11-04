@@ -1,0 +1,26 @@
+---
+title: "DELETE, TRUNCATE và DROP khác nhau thế nào?"
+topic: sql
+roles: [backend, fullstack, devops]
+level: junior
+tags: [ddl, dml, delete, truncate]
+answer: "DELETE (DML) xoá từng dòng theo WHERE, có thể rollback và kích hoạt trigger. TRUNCATE xoá toàn bộ dòng nhanh, reset bộ đếm identity, không có WHERE. DROP xoá cả bảng gồm cấu trúc, index, ràng buộc."
+---
+| | DELETE | TRUNCATE | DROP |
+|---|---|---|---|
+| Loại | DML | DDL | DDL |
+| WHERE | Có | Không | Không |
+| Xoá | dòng chọn | mọi dòng | cả bảng |
+| Tốc độ | chậm (log từng dòng) | nhanh | nhanh |
+| Reset auto-increment | Không | Thường có | n/a |
+| Rollback | Có | Tuỳ DBMS | Tuỳ DBMS |
+
+```sql
+DELETE FROM logs WHERE created_at < '2025-01-01';
+TRUNCATE TABLE staging_import;
+DROP TABLE tmp_report;
+```
+
+<Callout type="pitfall">
+Khả năng rollback của TRUNCATE/DROP khác nhau theo DBMS: PostgreSQL cho rollback trong transaction, MySQL (InnoDB) và Oracle thì commit ngầm. TRUNCATE cũng bị chặn nếu bảng được FOREIGN KEY tham chiếu.
+</Callout>

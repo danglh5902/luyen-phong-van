@@ -1,0 +1,35 @@
+---
+title: "Rate limiting với ThrottlerModule trong NestJS và khi chạy nhiều instance"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [throttler, rate-limit, redis, security]
+answer: "ThrottlerModule.forRoot cấu hình ttl và limit, đăng ký ThrottlerGuard làm APP_GUARD để giới hạn toàn cục; ghi đè từng route bằng @Throttle hoặc bỏ qua bằng @SkipThrottle. Storage mặc định là in-memory, nên nhiều instance cần storage chia sẻ như Redis. Sau proxy phải cấu hình đúng IP client."
+---
+```ts
+@Module({
+  imports: [ThrottlerModule.forRoot([
+    { name: 'short', ttl: 1000, limit: 3 },
+    { name: 'long', ttl: 60_000, limit: 100 },   // ttl tính bằng ms (v5+)
+  ])],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+})
+export class AppModule {}
+
+@Controller('auth')
+export class AuthController {
+  @Throttle({ short: { limit: 1, ttl: 1000 } })   // siết riêng
+  @Post('login') login() {}
+
+  @SkipThrottle() @Get('health') health() {}
+}
+```
+
+- Vượt giới hạn trả `429 Too Many Requests`.
+- Multi-instance: dùng `@nest-lab/throttler-storage-redis`, nếu không mỗi instance đếm riêng (giới hạn thực tế tăng lên N lần).
+- Sau reverse proxy/LB: bật `app.set('trust proxy', 1)` (Express), nếu không mọi request có cùng IP của proxy.
+- Có thể ghi đè `getTracker` để giới hạn theo user id hoặc API key thay vì IP.
+
+<Callout type="pitfall">
+Rate limit theo IP gây oan cho nhiều user dùng chung NAT. Endpoint nhạy cảm như login nên giới hạn theo cả tài khoản.
+</Callout>

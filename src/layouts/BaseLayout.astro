@@ -1,0 +1,63 @@
+---
+import '../styles/global.css';
+import Search from '../components/Search';
+import { getCollection } from 'astro:content';
+
+interface Props { title?: string; description?: string }
+const { title, description = 'Ôn phỏng vấn IT: câu hỏi ngắn gọn, ví dụ code minh họa, theo vị trí và công nghệ.' } = Astro.props;
+const pageTitle = title ? `${title} · Luyện Phỏng Vấn` : 'Luyện Phỏng Vấn IT';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const all = await getCollection('questions');
+const index = all.map((q) => ({ id: q.id, title: q.data.title, topic: q.data.topic, tags: q.data.tags, level: q.data.level }));
+---
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <title>{pageTitle}</title>
+    <script is:inline>
+      try {
+        const t = localStorage.getItem('lpv:theme');
+        if (t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+      } catch {}
+    </script>
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <header class="sticky top-0 z-30 border-b border-slate-200/80 bg-white/75 backdrop-blur-xl dark:border-white/10 dark:bg-[#0b0e17]/75">
+      <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
+        <a href={`${base}/`} class="flex items-center gap-2.5 font-bold text-slate-900 dark:text-white">
+          <span class="tile h-9 w-9 text-sm" style="--accent:#6366f1">&lt;/&gt;</span>
+          <span class="hidden sm:inline">Luyện Phỏng Vấn</span>
+        </a>
+        <nav class="ml-4 hidden items-center gap-1 text-sm font-medium text-slate-600 dark:text-slate-400 md:flex">
+          <a class="rounded-lg px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-white/5" href={`${base}/paths/`}>Lộ trình</a>
+          <a class="rounded-lg px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-white/5" href={`${base}/#roles`}>Vị trí</a>
+          <a class="rounded-lg px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-white/5" href={`${base}/#topics`}>Chủ đề</a>
+        </nav>
+        <div class="ml-auto flex flex-1 items-center justify-end gap-2">
+          <Search client:idle index={index} base={base} />
+          <button id="theme-toggle" type="button" aria-label="Đổi giao diện sáng/tối"
+            class="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10">
+            <span class="dark:hidden">🌙</span><span class="hidden dark:inline">☀️</span>
+          </button>
+        </div>
+      </div>
+    </header>
+    <main class="mx-auto w-full max-w-6xl flex-1 px-4 py-10"><slot /></main>
+    <footer class="border-t border-slate-200 py-8 text-center text-sm text-slate-500 dark:border-white/10">
+      Ôn mỗi ngày một ít · Tiến độ được lưu ngay trên trình duyệt của bạn
+    </footer>
+    <script is:inline>
+      document.getElementById('theme-toggle')?.addEventListener('click', () => {
+        const dark = document.documentElement.classList.toggle('dark');
+        try { localStorage.setItem('lpv:theme', dark ? 'dark' : 'light'); } catch {}
+      });
+    </script>
+  </body>
+</html>

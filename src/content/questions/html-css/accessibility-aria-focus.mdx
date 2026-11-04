@@ -1,0 +1,35 @@
+---
+title: "Accessibility trong HTML/CSS: khi nào dùng ARIA, và quản lý focus ra sao?"
+topic: html-css
+roles: [frontend, fullstack]
+level: senior
+tags: [accessibility, aria, focus, a11y]
+answer: "Quy tắc số một: ưu tiên thẻ native (button, label, dialog) trước ARIA, vì ARIA chỉ đổi cách trình bày cho assistive tech chứ không thêm hành vi bàn phím. Dùng aria-label/aria-labelledby/aria-expanded khi native không đủ, giữ focus indicator rõ ràng và quản lý focus khi mở modal."
+---
+```html
+<label for="email">Email</label>
+<input id="email" type="email" autocomplete="email" />
+
+<button aria-expanded="false" aria-controls="menu">Menu</button>
+<ul id="menu" hidden>...</ul>
+
+<button aria-label="Đóng"><svg aria-hidden="true">...</svg></button>
+```
+
+```css
+:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+```
+
+- `role="button"` trên `div` chưa đủ: vẫn phải tự thêm `tabindex="0"` và xử lý Enter/Space; dùng `button` là xong.
+- Với modal: chuyển focus vào trong, giữ focus trong modal (focus trap), đóng bằng Esc, trả focus về nút mở. Phần tử `dialog` native và thuộc tính `inert` hỗ trợ việc này.
+- Tương phản màu tối thiểu theo WCAG AA: 4.5:1 cho text thường.
+- Trạng thái động (toast, lỗi form) dùng `aria-live` hoặc `role="alert"`.
+
+<Callout type="pitfall">
+`outline: none` mà không thay thế bằng chỉ báo focus khác khiến người dùng bàn phím mất định hướng. Dùng `:focus-visible` để chỉ hiện với bàn phím.
+</Callout>
+
+<Callout type="tip">
+`display: none` và `hidden` ẩn khỏi cả screen reader; muốn chỉ ẩn trực quan thì dùng pattern `sr-only`.
+</Callout>

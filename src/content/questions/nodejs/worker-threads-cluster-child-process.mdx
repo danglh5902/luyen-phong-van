@@ -1,0 +1,35 @@
+---
+title: "worker_threads, cluster và child_process khác nhau thế nào?"
+topic: nodejs
+roles: [backend, fullstack]
+level: senior
+tags: [worker_threads, cluster, child_process, concurrency]
+answer: "worker_threads: thread trong cùng process, có V8 isolate riêng, chia sẻ memory qua SharedArrayBuffer, hợp tác vụ CPU nặng. cluster: nhiều process Node cùng lắng nghe một port để tận dụng nhiều core. child_process: chạy process/chương trình bên ngoài, giao tiếp qua IPC hoặc stdio."
+---
+| | `worker_threads` | `cluster` | `child_process` |
+|---|---|---|---|
+| Đơn vị | Thread | Process (fork của chính app) | Process bất kỳ |
+| Bộ nhớ | Riêng, có thể share `SharedArrayBuffer` | Riêng hoàn toàn | Riêng hoàn toàn |
+| Giao tiếp | `postMessage` | IPC | IPC / stdio |
+| Dùng cho | CPU-bound (nén, hash, parse lớn) | Scale HTTP server theo core | Chạy ffmpeg, script, lệnh shell |
+| Chi phí | Nhẹ hơn process | Nặng (mỗi worker một runtime) | Nặng |
+
+```js
+import { Worker, isMainThread, parentPort, workerData } from "node:worker_threads";
+
+if (isMainThread) {
+  const w = new Worker(new URL(import.meta.url), { workerData: 40 });
+  w.on("message", r => console.log("fib =", r));
+} else {
+  const fib = n => (n < 2 ? n : fib(n - 1) + fib(n - 2));
+  parentPort.postMessage(fib(workerData));
+}
+```
+
+<Callout type="pitfall">
+Worker không giúp tác vụ I/O (đã async sẵn) và việc tạo worker mỗi request rất tốn; hãy dùng pool (ví dụ `piscina`). Dữ liệu qua `postMessage` bị clone, trừ khi chuyển ownership qua transferable.
+</Callout>
+
+<Callout type="followup">
+Thực tế, scale ngang bằng nhiều instance (container/PM2) thường được ưu tiên hơn cluster tự viết.
+</Callout>

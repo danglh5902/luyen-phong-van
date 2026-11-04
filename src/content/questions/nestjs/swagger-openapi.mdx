@@ -1,0 +1,35 @@
+---
+title: "Tài liệu hoá API NestJS bằng Swagger/OpenAPI như thế nào?"
+topic: nestjs
+roles: [backend, fullstack]
+level: junior
+tags: [swagger, openapi, documentation]
+answer: "Dùng @nestjs/swagger: DocumentBuilder + SwaggerModule.createDocument/setup tạo OpenAPI spec và UI. Gắn @ApiProperty, @ApiTags, @ApiResponse cho DTO/controller, hoặc bật CLI plugin để tự suy ra metadata từ type TypeScript."
+---
+```ts
+// main.ts
+const config = new DocumentBuilder()
+  .setTitle('Shop API').setVersion('1.0').addBearerAuth().build();
+const doc = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup('docs', app, doc);   // UI tại /docs, JSON tại /docs-json
+
+// dto
+export class CreateUserDto {
+  @ApiProperty({ example: 'a@b.com' }) @IsEmail() email: string;
+  @ApiPropertyOptional() @IsString() name?: string;
+}
+
+@ApiTags('users') @ApiBearerAuth()
+@Controller('users')
+export class UsersController {
+  @Post() @ApiCreatedResponse({ type: UserDto }) create(@Body() dto: CreateUserDto) {}
+}
+```
+
+- Swagger CLI plugin (`nest-cli.json`) tự thêm `@ApiProperty` dựa vào type, đỡ viết tay.
+- Spec OpenAPI có thể sinh client SDK (openapi-generator) hoặc dùng cho contract test.
+- Kế thừa DTO dùng `PartialType`, `PickType`, `OmitType` từ `@nestjs/swagger` (không phải `@nestjs/mapped-types`) để metadata được giữ lại.
+
+<Callout type="pitfall">
+Không nên để Swagger UI mở công khai ở production nếu API nội bộ; ẩn bằng env hoặc bảo vệ bằng auth.
+</Callout>

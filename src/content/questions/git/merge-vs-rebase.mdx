@@ -1,0 +1,20 @@
+---
+title: "git merge và git rebase khác nhau thế nào?"
+topic: git
+roles: [frontend, backend, fullstack, devops]
+level: junior
+tags: [merge, rebase]
+answer: "merge tạo merge commit, giữ nguyên lịch sử; rebase viết lại commit của nhánh lên đỉnh nhánh đích để lịch sử thẳng. Không rebase nhánh đã push và có người khác dùng."
+---
+```bash
+# merge: giữ lịch sử thật, có merge commit
+git checkout main && git merge feature
+
+# rebase: lịch sử tuyến tính
+git checkout feature && git rebase main
+git checkout main && git merge --ff-only feature
+```
+
+<Callout type="pitfall">
+Rebase thay đổi hash commit. Nếu đã push nhánh dùng chung thì phải `push --force`, gây rắc rối cho đồng đội.
+</Callout>

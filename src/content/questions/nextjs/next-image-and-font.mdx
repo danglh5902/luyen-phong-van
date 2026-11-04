@@ -1,0 +1,34 @@
+---
+title: "next/image và next/font tối ưu hiệu năng như thế nào?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: junior
+tags: [next-image, next-font, performance, cls]
+answer: "next/image tự resize, chuyển WebP/AVIF, lazy-load và dành sẵn chỗ (width/height hoặc fill) để tránh layout shift; priority cho ảnh LCP. next/font tải font lúc build, self-host cùng domain, dùng size-adjust fallback nên không có request tới Google và giảm CLS."
+---
+```tsx
+import Image from "next/image";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"], display: "swap" });
+
+export default function Hero() {
+  return (
+    <main className={inter.className}>
+      <Image src="/hero.jpg" alt="Hero" width={1200} height={600} priority />
+    </main>
+  );
+}
+```
+
+- Ảnh remote cần khai báo domain trong `images.remotePatterns` ở `next.config`.
+- Dùng `sizes` cùng `fill` để browser chọn đúng kích thước ảnh responsive.
+- `priority` chỉ dùng cho ảnh above-the-fold (preload, tắt lazy-load).
+
+<Callout type="tip">
+Ảnh LCP phải có `priority`, các ảnh còn lại để mặc định lazy-load.
+</Callout>
+
+<Callout type="pitfall">
+Quên `width`/`height` (hoặc `fill` kèm container có kích thước) sẽ lỗi hoặc gây layout shift. Tối ưu ảnh chạy trên server lúc request, cần `sharp` khi tự host.
+</Callout>

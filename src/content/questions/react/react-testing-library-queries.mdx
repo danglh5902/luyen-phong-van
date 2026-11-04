@@ -1,0 +1,31 @@
+---
+title: "React Testing Library: nguyên tắc, thứ tự ưu tiên query và userEvent?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [testing, rtl, accessibility]
+answer: "RTL test hành vi người dùng thấy thay vì chi tiết cài đặt. Ưu tiên query theo accessibility: `getByRole` (kèm name) > `getByLabelText` > `getByText` > ... > `getByTestId` là cuối cùng. Dùng `userEvent` (async) thay `fireEvent`, và `findBy*` cho nội dung bất đồng bộ."
+---
+| Biến thể | Khi dùng |
+|---|---|
+| `getBy*` | phần tử phải có mặt, ném lỗi nếu không |
+| `queryBy*` | khẳng định không tồn tại (`toBeNull`) |
+| `findBy*` | chờ xuất hiện (Promise) |
+
+```tsx
+test("submit hiển thị lời chào", async () => {
+  const user = userEvent.setup();
+  render(<Greeting />);
+  await user.type(screen.getByLabelText(/tên/i), "An");
+  await user.click(screen.getByRole("button", { name: /gửi/i }));
+  expect(await screen.findByText("Xin chào An")).toBeInTheDocument();
+});
+```
+
+- Thứ tự: `ByRole`, `ByLabelText`, `ByPlaceholderText`, `ByText`, `ByDisplayValue`, rồi `ByAltText`/`ByTitle`, cuối cùng `ByTestId`.
+- Mock network bằng MSW thay vì mock từng hàm fetch.
+- Không test state nội bộ hay số lần render.
+
+<Callout type="tip">
+`getByRole` vừa kiểm tra selector vừa gián tiếp kiểm tra accessibility; nếu khó query bằng role, UI thường đang thiếu semantic.
+</Callout>

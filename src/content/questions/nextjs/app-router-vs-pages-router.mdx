@@ -1,0 +1,24 @@
+---
+title: "App Router và Pages Router khác nhau thế nào? Có thể dùng song song không?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: junior
+tags: [app-router, pages-router, routing]
+answer: "App Router (thư mục `app/`) dựa trên React Server Components, layout lồng nhau, streaming và Server Actions; Pages Router (`pages/`) dùng `getServerSideProps`/`getStaticProps` và mọi component mặc định là client. Hai router chạy song song được, nhưng một URL không được khai báo ở cả hai."
+---
+| | App Router | Pages Router |
+|---|---|---|
+| Thư mục | `app/` | `pages/` |
+| Component mặc định | Server Component | Client (SSR + hydrate) |
+| Lấy dữ liệu | `async` component, `fetch` | `getServerSideProps`, `getStaticProps` |
+| Layout | `layout.tsx` lồng nhau, giữ state | `_app.tsx`, `_document.tsx` |
+| API | Route Handler (`route.ts`) | `pages/api/*` |
+| Loading/Error | `loading.tsx`, `error.tsx`, Suspense | tự xử lý |
+
+- Di chuyển dần: có thể thêm `app/` bên cạnh `pages/`, chuyển từng route; nếu trùng đường dẫn, build sẽ báo lỗi.
+- Hook `useRouter` khác package: `next/navigation` (App) và `next/router` (Pages).
+- Pages Router vẫn được hỗ trợ; dự án mới nên dùng App Router.
+
+<Callout type="pitfall">
+Import nhầm `useRouter` từ `next/router` trong `app/` gây lỗi "NextRouter was not mounted". Dùng `next/navigation`.
+</Callout>

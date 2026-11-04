@@ -1,0 +1,24 @@
+---
+title: "Chọn SQL hay NoSQL cho hệ thống?"
+topic: system-design
+roles: [backend, fullstack]
+level: junior
+tags: [sql, nosql, database, trade-off]
+answer: "SQL (quan hệ) mạnh về schema chặt, JOIN, ACID transaction: hợp dữ liệu có quan hệ, cần nhất quán (tài chính, đơn hàng). NoSQL (document, key-value, wide-column, graph) ưu tiên scale ngang, schema linh hoạt, truy vấn theo pattern biết trước. Chọn theo access pattern, không theo mốt."
+---
+| Loại NoSQL | Ví dụ | Hợp với |
+|---|---|---|
+| Key-value | Redis, DynamoDB | cache, session, truy cập theo khoá |
+| Document | MongoDB | dữ liệu lồng, schema thay đổi |
+| Wide-column | Cassandra | ghi cực lớn, time-series |
+| Graph | Neo4j | quan hệ phức tạp (mạng xã hội) |
+
+Câu hỏi để quyết định:
+- Cần transaction đa bảng và JOIN ad-hoc không?
+- Tải ghi/đọc có vượt một node mạnh không?
+- Truy vấn có biết trước (key-based) hay khám phá tuỳ ý?
+- Chấp nhận eventual consistency không?
+
+<Callout type="tip">
+Không bắt buộc chọn một: nhiều hệ thống dùng PostgreSQL làm nguồn sự thật, Redis để cache, Elasticsearch để search (polyglot persistence). PostgreSQL hiện cũng hỗ trợ JSONB nên đủ cho nhiều bài toán "document".
+</Callout>

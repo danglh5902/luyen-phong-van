@@ -1,0 +1,38 @@
+---
+title: "Conditional types và infer hoạt động thế nào? Distributive conditional type là gì?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: senior
+tags: [conditional-types, infer, distributive, advanced-types]
+answer: "`T extends U ? X : Y` chọn type theo điều kiện; `infer R` trong nhánh `extends` trích một type con (như phần tử mảng, kiểu trả về). Khi T là type tham số trần và nhận union thì điều kiện phân phối (distributive) lên từng thành viên; bọc `[T]` để tắt hành vi đó."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="ts" code={`type ElementOf<T> = T extends readonly (infer U)[] ? U : never;
+type Unwrap<T> = T extends Promise<infer U> ? Unwrap<U> : T;
+
+// distributive: ToArray<string | number> = string[] | number[]
+type ToArray<T> = T extends unknown ? T[] : never;
+// không distributive: (string | number)[]
+type ToArrayBoxed<T> = [T] extends [unknown] ? T[] : never;
+
+const x: ElementOf<number[]> = 5;
+const y: Unwrap<Promise<Promise<string>>> = "s";
+const z: ToArray<string | number> = ["a"];
+const w: ToArrayBoxed<string | number> = ["a", 1];
+console.log(x, y, z, w);`} />
+
+- `infer` chỉ dùng được trong mệnh đề `extends` của conditional type. Có thể suy luận nhiều vị trí, ví dụ `T extends (...args: infer A) => infer R`.
+- `ReturnType`, `Parameters`, `Awaited`, `Exclude`, `Extract` đều là conditional type.
+- `Exclude<T, U> = T extends U ? never : T` hoạt động nhờ distribution: `never` biến mất khỏi union.
+- Đệ quy conditional type (như `Unwrap`) có giới hạn độ sâu; TS có tail-recursion optimization cho dạng cụ thể.
+
+<Callout type="pitfall">
+`never` là union rỗng: `ToArray<never>` cho `never` vì distribution trên tập rỗng. Muốn xử lý, dùng dạng bọc `[T] extends [never]`. Ngoài ra conditional type trên generic chưa resolve (bên trong hàm generic) bị hoãn, nên gán giá trị cho nó thường phải ép kiểu.
+</Callout>
+
+<Callout type="followup">
+Viết `type LastOf<T extends unknown[]> = ...` hoặc `DeepReadonly<T>` bằng conditional type đệ quy.
+</Callout>

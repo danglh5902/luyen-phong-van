@@ -1,0 +1,28 @@
+---
+title: "Đọc EXPLAIN / query plan để tối ưu truy vấn chậm"
+topic: sql
+roles: [backend, devops]
+level: senior
+tags: [explain, query-plan, optimization]
+answer: "EXPLAIN cho thấy kế hoạch thực thi optimizer chọn; EXPLAIN ANALYZE chạy thật và báo thời gian, số dòng thực tế. Cần chú ý Seq/Full scan vs Index scan, kiểu join, chênh lệch giữa rows ước lượng và thực tế (thống kê lỗi thời), và bước sort tốn kém."
+---
+```sql
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM orders WHERE user_id = 42 ORDER BY created_at DESC LIMIT 10;
+```
+
+```text
+Limit  (cost=0.43..8.5 rows=10) (actual time=0.05..0.07 rows=10)
+  -> Index Scan Backward using idx_orders_user_created
+       Index Cond: (user_id = 42)
+```
+
+Cần kiểm tra:
+- **Seq Scan** trên bảng lớn với điều kiện chọn lọc cao: thiếu index hoặc hàm bọc cột.
+- **rows ước lượng lệch xa thực tế**: chạy `ANALYZE` cập nhật thống kê.
+- **Nested Loop** trên tập lớn, **Sort/Hash spill ra đĩa**.
+- Index composite nên theo thứ tự: cột bằng (`=`) trước, cột sort/range sau.
+
+<Callout type="pitfall">
+`EXPLAIN ANALYZE` thực sự chạy câu lệnh: với INSERT/UPDATE/DELETE hãy bọc trong transaction rồi `ROLLBACK`.
+</Callout>

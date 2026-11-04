@@ -1,0 +1,42 @@
+---
+title: "Shallow copy và deep copy khác nhau thế nào? structuredClone có giới hạn gì?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [copy, reference, structuredClone, immutability]
+answer: "Shallow copy (spread, Object.assign, slice) chỉ copy cấp đầu, object lồng nhau vẫn chung tham chiếu. Deep copy sao chép đệ quy: dùng `structuredClone` (hỗ trợ Date, Map, Set, vòng tham chiếu; không clone được function, DOM, class instance giữ prototype)."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`const orig = { n: 1, inner: { v: 1 }, d: new Date(0) };
+
+const shallow = { ...orig };
+shallow.inner.v = 2;
+console.log(orig.inner.v);            // 2, bị ảnh hưởng
+
+const deep = structuredClone(orig);
+deep.inner.v = 99;
+console.log(orig.inner.v, deep.d instanceof Date);
+
+const viaJson = JSON.parse(JSON.stringify(orig));
+console.log(typeof viaJson.d);        // string, Date mất kiểu
+
+try { structuredClone({ f() {} }); } catch (e) { console.log(e.name); }`} />
+
+## So sánh các cách deep copy
+
+| Cách | Date/Map/Set | Function | Vòng tham chiếu | undefined |
+|---|---|---|---|---|
+| `JSON.parse(JSON.stringify())` | mất/hỏng | bỏ | lỗi | bỏ key |
+| `structuredClone` | giữ | `DataCloneError` | giữ | giữ |
+| Hàm đệ quy tự viết | tùy | tùy | cần `WeakMap` | tùy |
+
+<Callout type="pitfall">
+`structuredClone` mất prototype: class instance trở thành object thường. Cần clone class thì tự định nghĩa method `clone()`.
+</Callout>
+
+<Callout type="tip">
+Với state immutable (React), không cần deep copy toàn bộ: chỉ copy nhánh thay đổi (structural sharing) hoặc dùng Immer.
+</Callout>

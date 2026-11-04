@@ -1,0 +1,32 @@
+---
+title: "EventEmitter trong Node.js hoạt động thế nào và cần lưu ý gì?"
+topic: nodejs
+roles: [backend, fullstack]
+level: junior
+tags: [eventemitter, events, observer]
+answer: "EventEmitter cài đặt mẫu observer: on/once đăng ký listener, emit gọi các listener theo thứ tự đăng ký một cách đồng bộ. Phát sự kiện error mà không có listener sẽ throw; cần gỡ listener (off) để tránh leak."
+---
+```js
+import { EventEmitter } from "node:events";
+
+class Job extends EventEmitter {}
+const job = new Job();
+
+job.on("done", (r) => console.log("1:", r));
+job.once("done", (r) => console.log("2 (chỉ lần đầu):", r));
+job.on("error", (e) => console.error("lỗi:", e.message));
+
+job.emit("done", 42);   // gọi đồng bộ: in 1 rồi 2
+job.emit("done", 43);   // chỉ in 1
+job.emit("error", new Error("hỏng"));
+```
+
+- `emit` chạy listener đồng bộ, tuần tự; muốn bất đồng bộ phải tự dùng `setImmediate`/`queueMicrotask` trong listener.
+- `emit("error")` không có listener thì ném lỗi và có thể làm crash process.
+- Vượt 10 listener cho một sự kiện sẽ cảnh báo `MaxListenersExceededWarning` (đặt bằng `setMaxListeners`), thường là dấu hiệu leak.
+- `await events.once(emitter, "ready")` chuyển sự kiện thành Promise.
+- `http.Server`, streams, `process` đều kế thừa EventEmitter.
+
+<Callout type="pitfall">
+Listener là hàm async không được `emit` chờ: lỗi trong đó thành unhandled rejection. Bọc try/catch bên trong hoặc dùng `captureRejections: true`.
+</Callout>

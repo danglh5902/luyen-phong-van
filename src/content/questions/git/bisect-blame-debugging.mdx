@@ -1,0 +1,27 @@
+---
+title: "Dùng git bisect, blame, log -S để tìm nguồn gốc bug"
+topic: git
+roles: [backend, fullstack, devops, frontend]
+level: senior
+tags: [bisect, blame, log, debugging]
+answer: "git bisect dùng tìm kiếm nhị phân giữa commit tốt và xấu để tìm commit gây lỗi trong O(log n) bước, có thể tự động bằng script. git blame cho biết ai sửa dòng nào lần cuối; git log -S hoặc -G tìm commit thêm hoặc xoá một chuỗi."
+---
+```bash
+git bisect start
+git bisect bad                 # commit hiện tại lỗi
+git bisect good v2.3.0         # phiên bản từng tốt
+# Git checkout commit giữa; test rồi đánh dấu good/bad ...
+git bisect run npm test        # tự động: exit 0 = good, khác 0 = bad
+git bisect reset               # về lại nhánh ban đầu
+```
+
+```bash
+git blame -L 40,60 -w -C src/pay.js     # bỏ qua khoảng trắng, theo dõi code copy/move
+git log -S"retryCount" --oneline        # commit làm đổi số lần xuất hiện chuỗi
+git log -L :calcTotal:src/pay.js        # lịch sử của một hàm
+git blame --ignore-revs-file .git-blame-ignore-revs   # bỏ commit format hàng loạt
+```
+
+<Callout type="tip">
+Commit nhỏ và mỗi commit build/test được giúp bisect chính xác. Với commit không build được dùng `git bisect skip`.
+</Callout>

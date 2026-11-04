@@ -1,0 +1,19 @@
+---
+title: "Node.js đơn luồng nhưng xử lý được nhiều request nhờ đâu?"
+topic: nodejs
+roles: [backend, fullstack]
+level: mid
+tags: [event-loop, async]
+answer: "Node chạy JS trên 1 luồng nhưng giao I/O (file, mạng, DB) cho libuv/OS xử lý bất đồng bộ; khi xong, callback được đưa lại event loop. Tác vụ CPU nặng sẽ chặn toàn bộ."
+---
+import Runnable from "../../../components/Runnable";
+
+<Runnable client:visible lang="js" code={`const t = Date.now();
+setTimeout(() => console.log('timer sau', Date.now() - t, 'ms'), 10);
+// CPU nặng chặn event loop -> timer bị trễ
+while (Date.now() - t < 200) {}
+console.log('xong vòng lặp chặn');`} />
+
+<Callout type="tip">
+CPU nặng: dùng `worker_threads`, `child_process` hoặc tách ra service riêng. Ưu tiên API async (`fs.promises`) thay vì `readFileSync` trong request handler.
+</Callout>

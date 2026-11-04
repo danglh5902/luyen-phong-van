@@ -1,0 +1,29 @@
+---
+title: "next/link prefetch hoạt động thế nào và điều hướng client-side khác gì reload trang?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: junior
+tags: [link, prefetch, navigation]
+answer: "`<Link>` điều hướng client-side (không reload) và tự prefetch route khi link vào viewport, chỉ ở production. Route tĩnh được prefetch đầy đủ; route dynamic chỉ prefetch tới `loading.tsx` gần nhất. Tắt bằng `prefetch={false}`."
+---
+```tsx
+import Link from "next/link";
+
+<Link href="/blog/hello">Đọc bài</Link>
+<Link href="/admin" prefetch={false}>Admin</Link>
+```
+
+Điều hướng bằng code (Client Component): `useRouter()` từ `next/navigation` với `push`, `replace`, `back`, `refresh`; trong Server Component dùng `redirect()`.
+
+- Prefetch tải trước RSC payload và JS, nên chuyển trang gần như tức thì.
+- Dev mode không prefetch, nên đừng đo hiệu năng điều hướng ở `next dev`.
+- `router.refresh()` lấy lại RSC payload của route hiện tại mà vẫn giữ state client.
+- Dùng `<a>` thường sẽ reload cả trang và mất state client.
+
+<Callout type="tip">
+Với danh sách rất nhiều link (bảng dài), cân nhắc `prefetch={false}` để tránh tải thừa; có thể prefetch khi hover bằng `router.prefetch`.
+</Callout>
+
+<Callout type="followup">
+Next 15 đổi mặc định Router Cache: page segment không còn cache mặc định ở client (`staleTimes` = 0), chỉ layout/loading dùng lại khi back/forward.
+</Callout>

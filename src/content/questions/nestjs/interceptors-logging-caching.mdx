@@ -1,0 +1,30 @@
+---
+title: "Interceptor dùng để làm gì? Ví dụ logging, caching, map response"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [interceptor, rxjs, caching, logging]
+answer: "Interceptor implements NestInterceptor, bọc handler bằng RxJS: chạy code trước và sau handler qua next.handle(). Dùng để log thời gian, map/chuẩn hóa response, cache (trả of(cached) mà không gọi handler), timeout, ánh xạ lỗi bằng catchError."
+---
+```ts
+@Injectable()
+export class WrapInterceptor implements NestInterceptor {
+  intercept(ctx: ExecutionContext, next: CallHandler): Observable<unknown> {
+    const t = Date.now();
+    return next.handle().pipe(
+      tap(() => console.log(`${Date.now() - t}ms`)),
+      map((data) => ({ data, success: true })),
+    );
+  }
+}
+
+// cache thủ công: bỏ qua handler
+// if (hit) return of(hit);
+```
+
+- Nest có sẵn `CacheInterceptor` (với `@nestjs/cache-manager`) cache response của GET theo URL.
+- `ClassSerializerInterceptor` áp dụng `@Exclude()` để ẩn field như password.
+
+<Callout type="pitfall">
+Nếu không gọi `next.handle()` thì handler không chạy. Và cache theo URL không phân biệt user: cẩn thận với dữ liệu riêng tư, hãy override `trackBy`.
+</Callout>

@@ -1,0 +1,33 @@
+---
+title: "Validate input trong Express: vì sao cần và dùng zod như thế nào?"
+topic: nodejs
+roles: [backend, fullstack]
+level: mid
+tags: [express, validation, zod, security]
+answer: "Không bao giờ tin req.body/query/params. Dùng schema (zod/joi) validate ở biên, từ chối sớm bằng 400 và nhận về dữ liệu đã parse đúng kiểu. zod suy ra TypeScript type từ schema, nên một nguồn sự thật cho cả runtime và compile time."
+---
+TypeScript chỉ kiểm tra lúc compile; dữ liệu từ client vào runtime luôn là `unknown`. Viết middleware validate dùng lại được:
+
+```ts
+import { z, ZodSchema } from 'zod';
+
+const validate = (schema: ZodSchema) => (req, res, next) => {
+  const r = schema.safeParse({ body: req.body, query: req.query });
+  if (!r.success) return res.status(400).json({ errors: r.error.flatten() });
+  Object.assign(req, r.data);   // dữ liệu đã coerce/làm sạch
+  next();
+};
+
+const createUser = z.object({
+  body: z.object({ email: z.string().email(), age: z.coerce.number().int().min(0) }).strict(),
+});
+app.post('/users', validate(createUser), handler);
+```
+
+- `.strict()` từ chối field lạ, tránh mass assignment (ví dụ client gửi `isAdmin: true`).
+- Query string luôn là string, nên cần `z.coerce`.
+- Giới hạn kích thước body: `express.json({ limit: '100kb' })`.
+
+<Callout type="pitfall">
+Validate chỉ phía client là vô nghĩa. Còn validate format không thay thế parameterized query khi truy cập DB.
+</Callout>

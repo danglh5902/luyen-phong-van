@@ -1,0 +1,34 @@
+---
+title: "Closure trong JavaScript là gì?"
+topic: javascript
+roles: [frontend, fullstack]
+level: junior
+tags: [scope, function]
+answer: "Closure là hàm \"nhớ\" được biến ở phạm vi (scope) nơi nó được tạo ra, kể cả khi hàm cha đã chạy xong."
+---
+import Runnable from "../../../components/Runnable";
+
+## Giải thích
+
+Mỗi hàm giữ một tham chiếu tới môi trường từ vựng (lexical environment) bao quanh nó. Nhờ đó hàm con vẫn truy cập được biến của hàm cha.
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`function makeCounter() {
+  let count = 0;
+  return () => ++count;
+}
+const a = makeCounter();
+const b = makeCounter();
+console.log(a(), a(), a()); // 1 2 3
+console.log(b());           // 1 (b có count riêng)`} />
+
+Dùng để: private state, factory function, debounce/throttle, memoization.
+
+<Callout type="pitfall">
+Vòng `for (var i...)` + `setTimeout` in ra cùng một giá trị vì mọi callback chia sẻ **một** biến `i`. Dùng `let` để mỗi vòng có biến riêng.
+</Callout>
+
+<Callout type="followup">
+Closure có gây memory leak không? Có thể, nếu giữ tham chiếu tới object lớn mà không còn dùng nữa.
+</Callout>

@@ -1,0 +1,28 @@
+---
+title: "Circuit breaker, retry và exponential backoff"
+topic: system-design
+roles: [backend, devops]
+level: senior
+tags: [resilience, circuit-breaker, retry, backoff, timeout]
+answer: "Retry xử lý lỗi tạm thời nhưng phải có giới hạn, exponential backoff kèm jitter, và chỉ với thao tác idempotent. Circuit breaker ngắt gọi dịch vụ lỗi (closed, open, half-open) để fail nhanh và tránh sập dây chuyền. Luôn đặt timeout cho mọi cuộc gọi mạng."
+---
+```text
+Closed    : cho request đi qua, đếm lỗi
+   | lỗi vượt ngưỡng
+Open      : fail ngay (hoặc trả fallback), không gọi downstream
+   | sau thời gian chờ
+Half-open : cho vài request thử; thành công -> Closed, thất bại -> Open
+```
+
+```text
+delay = min(cap, base * 2^attempt) + random(0, jitter)
+# ví dụ base=100ms: 100, 200, 400, 800 ... + ngẫu nhiên
+```
+
+- **Jitter** tránh thundering herd: nhiều client retry cùng một lúc.
+- Retry chồng nhiều tầng làm khuếch đại tải (3 tầng x 3 lần = 27 request); dùng retry budget và retry ở một tầng.
+- Bổ sung: bulkhead (cô lập pool), timeout, load shedding, fallback/cache cũ.
+
+<Callout type="pitfall">
+Retry thao tác không idempotent (thanh toán) có thể trừ tiền hai lần: dùng idempotency key. Không retry lỗi 4xx do client, chỉ retry 5xx, timeout và lỗi mạng.
+</Callout>

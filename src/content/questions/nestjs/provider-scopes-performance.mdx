@@ -1,0 +1,28 @@
+---
+title: "Provider scope DEFAULT, REQUEST, TRANSIENT khác gì nhau và ảnh hưởng hiệu năng ra sao?"
+topic: nestjs
+roles: [backend, fullstack]
+level: senior
+tags: [scope, request-scope, performance, di]
+answer: "DEFAULT là singleton dùng chung cả app. REQUEST tạo instance mới cho mỗi request, TRANSIENT tạo instance riêng cho mỗi consumer inject. Scope REQUEST có tính lan truyền lên mọi consumer của nó, tốn bộ nhớ và CPU, nên chỉ dùng khi thật cần."
+---
+| Scope | Vòng đời | Chi phí |
+|---|---|---|
+| DEFAULT | 1 instance suốt app | thấp nhất |
+| REQUEST | 1 instance mỗi request, GC khi xong | cao, lan truyền |
+| TRANSIENT | 1 instance mỗi nơi inject | trung bình, không chia sẻ |
+
+```ts
+@Injectable({ scope: Scope.REQUEST })
+export class TenantService {
+  constructor(@Inject(REQUEST) private req: Request) {}
+}
+```
+
+- Scope bubble up: controller phụ thuộc provider REQUEST cũng trở thành request-scoped, kéo theo cả chuỗi bị khởi tạo lại mỗi request.
+- Lifecycle hook như `onModuleInit` không chạy theo từng request-scoped instance.
+- Thay thế nhẹ hơn: `AsyncLocalStorage` (vd. nestjs-cls) giữ context theo request mà provider vẫn là singleton.
+
+<Callout type="pitfall">
+Gắn REQUEST scope cho service dùng khắp nơi (logger, repository) có thể làm giảm throughput rõ rệt. Hãy truyền context bằng tham số hoặc ALS.
+</Callout>

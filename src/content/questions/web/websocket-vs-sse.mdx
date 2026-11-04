@@ -1,0 +1,32 @@
+---
+title: "WebSocket, Server-Sent Events và long polling: khác nhau và chọn thế nào?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [websocket, sse, realtime, polling]
+answer: "WebSocket là kênh song công (hai chiều) trên một kết nối TCP sau bước upgrade, hợp chat/game. SSE là luồng một chiều server tới client trên HTTP, tự reconnect, đủ cho notification/feed. Long polling là fallback đơn giản nhưng tốn tài nguyên hơn."
+---
+| | WebSocket | SSE | Long polling |
+|---|---|---|---|
+| Hướng | Hai chiều | Server tới client | Mô phỏng |
+| Giao thức | `ws://`, `wss://` | HTTP (`text/event-stream`) | HTTP |
+| Tự reconnect | Phải tự code | Có sẵn (`EventSource`) | Tự code |
+| Dữ liệu | Text và binary | Chỉ text | Bất kỳ |
+| Proxy/firewall | Đôi khi gặp vấn đề | Thân thiện | Thân thiện |
+
+```js
+const ws = new WebSocket("wss://example.com/chat");
+ws.onmessage = (e) => console.log(e.data);
+ws.send("hello");
+
+const es = new EventSource("/events");
+es.onmessage = (e) => console.log(e.data);
+```
+
+- WebSocket bắt đầu bằng HTTP request `Upgrade: websocket` rồi chuyển giao thức.
+- Với WebSocket cần xử lý heartbeat (ping/pong), reconnect với backoff, scale ngang (sticky session hoặc pub/sub như Redis).
+- SSE trên HTTP/1.1 bị giới hạn ~6 kết nối mỗi domain; HTTP/2 hết hạn chế này.
+
+<Callout type="tip">
+Chỉ cần server đẩy dữ liệu (thông báo, tiến trình, giá) thì SSE đơn giản hơn nhiều. Cần client gửi liên tục với độ trễ thấp mới chọn WebSocket.
+</Callout>

@@ -1,0 +1,18 @@
+---
+title: "Image và container khác nhau thế nào?"
+topic: docker
+roles: [devops, backend, fullstack]
+level: junior
+tags: [image, container]
+answer: "Image là bản mẫu chỉ đọc (gồm code, runtime, thư viện); container là một instance đang chạy của image, có thêm một lớp ghi riêng và sẽ mất dữ liệu khi xóa nếu không dùng volume."
+---
+```bash
+docker build -t myapp:1.0 .          # tạo image
+docker run -d -p 8080:3000 myapp:1.0 # tạo + chạy container từ image
+docker run -d -p 8081:3000 myapp:1.0 # nhiều container từ 1 image
+docker ps                            # container đang chạy
+```
+
+<Callout type="tip">
+Ví dụ so sánh: image giống class, container giống object.
+</Callout>

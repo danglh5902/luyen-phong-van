@@ -1,0 +1,29 @@
+---
+title: "fs: sync, callback và promises khác nhau thế nào? Dùng path ra sao?"
+topic: nodejs
+roles: [backend, fullstack]
+level: junior
+tags: [fs, path, async]
+answer: "fs có ba kiểu: *Sync chặn event loop, callback và fs.promises không chặn. Trên server dùng fs/promises với async/await; chỉ dùng Sync lúc khởi động. Luôn dựng đường dẫn bằng path.join/resolve thay vì nối chuỗi."
+---
+```js
+const fs = require('node:fs/promises');
+const path = require('node:path');
+
+const file = path.join(__dirname, 'data', 'users.json'); // đúng separator theo OS
+const users = JSON.parse(await fs.readFile(file, 'utf8'));
+await fs.writeFile(file, JSON.stringify(users), 'utf8');
+```
+
+| Kiểu | Đặc điểm |
+|---|---|
+| `fs.readFileSync` | Chặn event loop; ổn khi bootstrap/CLI |
+| `fs.readFile(cb)` | Không chặn, callback style |
+| `fs/promises` | Không chặn, dùng `await` |
+
+- `path.join` nối và chuẩn hoá; `path.resolve` trả về đường dẫn tuyệt đối.
+- Tương đối so với `process.cwd()` thay đổi theo nơi chạy; dùng `__dirname` (hoặc `import.meta.dirname`) để ổn định.
+
+<Callout type="pitfall">
+`readFile` nạp cả file vào RAM. Với file lớn dùng `fs.createReadStream` + `pipeline`. Ngoài ra không `existsSync` rồi mới đọc (race condition); cứ đọc và bắt lỗi `ENOENT`.
+</Callout>

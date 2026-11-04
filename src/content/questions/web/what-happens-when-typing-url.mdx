@@ -1,0 +1,29 @@
+---
+title: "Điều gì xảy ra khi gõ một URL vào trình duyệt và nhấn Enter?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: junior
+tags: [browser, dns, tcp, http, rendering]
+answer: "Trình duyệt phân tích URL, tra cache rồi phân giải DNS ra IP, mở kết nối TCP (và TLS nếu HTTPS), gửi HTTP request, nhận response, parse HTML thành DOM, tải CSS/JS/ảnh phụ thuộc, tạo render tree rồi layout, paint và composite lên màn hình."
+---
+1. Parse URL (scheme, host, port, path); kiểm tra HSTS, cache.
+2. DNS: cache trình duyệt/OS, rồi resolver, root, TLD, authoritative server trả về IP.
+3. TCP 3-way handshake (QUIC nếu HTTP/3), rồi TLS handshake nếu HTTPS.
+4. Gửi request, server (có thể qua CDN, load balancer) trả response.
+5. Parse HTML thành DOM; gặp CSS dựng CSSOM, gặp `script` có thể chặn parse.
+6. DOM + CSSOM thành render tree, rồi layout, paint, composite.
+7. JS chạy, tải thêm tài nguyên, trang tương tác được.
+
+```http
+GET / HTTP/1.1
+Host: example.com
+Accept: text/html
+```
+
+<Callout type="tip">
+Trả lời có cấu trúc theo giai đoạn (mạng, server, trình duyệt) và nhắc điểm tối ưu: DNS prefetch, preconnect, CDN, cache, giảm render-blocking resource.
+</Callout>
+
+<Callout type="followup">
+Nếu URL redirect 301/302, trình duyệt lặp lại các bước với URL mới; redirect nhiều lần làm tăng độ trễ.
+</Callout>

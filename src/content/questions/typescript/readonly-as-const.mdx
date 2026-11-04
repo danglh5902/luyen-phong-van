@@ -1,0 +1,33 @@
+---
+title: "readonly, Readonly và `as const` khác nhau thế nào?"
+topic: typescript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [readonly, as-const, immutability, literal-types]
+answer: "`readonly` cấm gán lại property/phần tử ở compile time (nông, không bảo vệ runtime). `as const` suy luận kiểu hẹp nhất: literal type, tuple và mọi thứ thành readonly đệ quy. Muốn bất biến thật ở runtime cần `Object.freeze`."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="ts" code={`const arr = [1, 2, 3] as const;            // readonly [1, 2, 3]
+const cfg = { url: "/api", retries: 3 } as const;
+type Method = (typeof cfg)["url"];          // "/api" (không phải string)
+
+function sum(xs: readonly number[]) {
+  return xs.reduce((a, b) => a + b, 0);     // xs.push(...) sẽ lỗi
+}
+console.log(sum(arr), cfg.retries);
+
+const o: Readonly<{ a: number }> = { a: 1 };
+(o as { a: number }).a = 2;                 // ép kiểu qua mặt compiler
+console.log(o.a);                           // 2: readonly không có tác dụng runtime`} />
+
+- `readonly` trên property/index signature/mảng (`readonly T[]`, `ReadonlyArray<T>`).
+- `Readonly<T>` áp dụng cho mọi key của T, chỉ cấp một.
+- `as const` trên object literal: key readonly, giá trị là literal; mảng thành tuple readonly. Dùng cho config, danh sách giá trị để suy ra union.
+- `readonly number[]` không gán ngược được cho `number[]` (vì mảng mutable có thêm method ghi).
+
+<Callout type="pitfall">
+`as const` không làm bất biến runtime và không dùng được với biến (`x as const` chỉ áp dụng cho literal). Object truyền qua hàm nhận kiểu mutable vẫn có thể bị sửa. Hãy kết hợp với `Object.freeze` khi cần đảm bảo thật.
+</Callout>

@@ -1,0 +1,41 @@
+---
+title: "Reflow vs repaint và cách làm animation CSS mượt (transform, opacity, `will-change`)"
+topic: html-css
+roles: [frontend, fullstack]
+level: senior
+tags: [performance, animation, reflow, repaint, compositing]
+answer: "Đổi thuộc tính layout (width, top, margin) gây reflow rồi repaint; đổi paint (color, box-shadow) gây repaint; transform và opacity thường chỉ cần composite trên GPU nên mượt nhất. Animate transform/opacity, dùng will-change có chọn lọc và tránh đọc layout xen kẽ ghi."
+---
+| Thay đổi | Pipeline chạy lại |
+|---|---|
+| `width`, `top`, `margin`, `font-size` | Layout, Paint, Composite |
+| `color`, `background`, `box-shadow` | Paint, Composite |
+| `transform`, `opacity` | Chỉ Composite (thường) |
+
+```css
+/* Tệ: layout mỗi frame */
+.box { transition: left .3s; }
+/* Tốt */
+.box { transition: transform .3s; }
+.box.open { transform: translateX(200px); }
+
+.modal { will-change: transform; } /* chỉ khi sắp animate */
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+```
+
+```js
+// Layout thrashing: đọc/ghi xen kẽ buộc reflow đồng bộ nhiều lần
+els.forEach((el) => { el.style.width = el.offsetWidth + 10 + "px"; });
+// Tốt hơn: gom đọc trước, ghi sau (hoặc dùng requestAnimationFrame)
+```
+
+- `transition` đi từ trạng thái A sang B khi có thay đổi; `@keyframes` animation định nghĩa nhiều bước, tự chạy và lặp.
+- Kiểm tra bằng DevTools Performance (Layout, Paint) và Layers panel.
+
+<Callout type="pitfall">
+`will-change` đặt tràn lan tạo nhiều layer, tốn bộ nhớ GPU và có thể chậm hơn. Gỡ sau khi animation xong.
+</Callout>
+
+<Callout type="tip">
+`position: fixed/sticky` hay `transform` tạo layer riêng; `contain: layout paint` giúp cô lập vùng ảnh hưởng của reflow.
+</Callout>

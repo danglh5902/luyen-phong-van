@@ -1,0 +1,35 @@
+---
+title: "Custom providers: useClass, useValue, useFactory, useExisting dùng khi nào?"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [custom-provider, useFactory, di]
+answer: "Provider có dạng provide + một trong useClass (chọn implementation), useValue (hằng, mock), useFactory (tạo bằng hàm, có thể async và nhận dependency qua inject), useExisting (alias). Token có thể là class, string hoặc Symbol; dùng @Inject(token) để lấy."
+---
+```ts
+export const DB = Symbol('DB');
+
+@Module({
+  providers: [
+    { provide: Mailer, useClass: isProd ? SesMailer : ConsoleMailer },
+    { provide: 'API_KEY', useValue: 'abc123' },
+    {
+      provide: DB,
+      inject: [ConfigService],
+      useFactory: async (cfg: ConfigService) =>
+        createConnection(cfg.get('DB_URL')),
+    },
+    { provide: 'AliasMailer', useExisting: Mailer },
+  ],
+})
+export class AppModule {}
+// constructor(@Inject(DB) private db: Connection) {}
+```
+
+<Callout type="tip">
+Factory async: Nest chờ Promise resolve xong trước khi khởi tạo các provider phụ thuộc, nên hợp để mở kết nối khi bootstrap.
+</Callout>
+
+<Callout type="pitfall">
+`useExisting` tạo alias trỏ về cùng instance, còn `useClass` với cùng class sẽ tạo instance mới.
+</Callout>

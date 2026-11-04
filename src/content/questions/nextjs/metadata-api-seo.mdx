@@ -1,0 +1,36 @@
+---
+title: "Metadata API và SEO trong Next.js: generateMetadata, sitemap, robots, Open Graph?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: junior
+tags: [seo, metadata, sitemap]
+answer: "Export `metadata` (tĩnh) hoặc `generateMetadata` (động, theo params) trong `layout`/`page` để Next sinh thẻ title, description, Open Graph, canonical. Thêm `sitemap.ts`, `robots.ts` và `opengraph-image` để hoàn thiện SEO; chỉ dùng được ở Server Component."
+---
+```tsx
+// app/blog/[slug]/page.tsx
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }, // Next 14: không phải Promise
+): Promise<Metadata> {
+  const { slug } = await params;
+  const post = await getPost(slug); // fetch cùng URL được dedupe với page
+  return {
+    title: post.title,
+    description: post.summary,
+    alternates: { canonical: `/blog/${slug}` },
+    openGraph: { images: [post.cover] },
+  };
+}
+
+// app/sitemap.ts
+export default async function sitemap() {
+  return (await getPosts()).map((p) => ({ url: `https://x.com/blog/${p.slug}`, lastModified: p.updatedAt }));
+}
+```
+
+- Metadata được merge theo thứ tự layout cha tới page; `title.template` đặt khuôn tiêu đề.
+- `fetch` và hàm bọc `cache()` trong `generateMetadata` và page được dedupe.
+- Metadata được stream sau shell nên không chặn render; bot vẫn nhận đủ thẻ trong HTML.
+
+<Callout type="tip">
+Đặt `metadataBase` ở root layout để URL tương đối của Open Graph/canonical thành tuyệt đối.
+</Callout>

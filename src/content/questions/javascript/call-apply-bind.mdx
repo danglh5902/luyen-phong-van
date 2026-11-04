@@ -1,0 +1,43 @@
+---
+title: "call, apply, bind khác nhau thế nào? Tự viết bind"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [this, call, apply, bind, polyfill]
+answer: "`call(ctx, a, b)` và `apply(ctx, [a, b])` gọi hàm ngay với `this` chỉ định (khác ở cách truyền đối số). `bind(ctx, ...pre)` trả về hàm mới đã khóa `this` và đối số đầu (partial application), không gọi ngay; `this` đã bind không thể bị override bởi call/apply."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ và bind tự viết
+
+<Runnable client:visible lang="js" code={`Function.prototype.myBind = function (ctx, ...preset) {
+  const fn = this;
+  return function (...args) {
+    return fn.apply(ctx, [...preset, ...args]);
+  };
+};
+
+function greet(greeting, punct) {
+  return greeting + ", " + this.name + punct;
+}
+const bound = greet.myBind({ name: "An" }, "Hi");
+console.log(bound("!"));
+console.log(greet.call({ name: "B" }, "Yo", "?"));
+console.log(greet.apply({ name: "C" }, ["Hey", "."]));
+console.log(bound.call({ name: "X" }, "?"));  // vẫn là An`} />
+
+Bản polyfill này đơn giản hóa: bản chuẩn còn xử lý khi gọi bằng `new` (bỏ qua `ctx`, giữ prototype) và đặt `name`/`length` cho hàm trả về.
+
+| | Gọi ngay | Truyền đối số |
+|---|---|---|
+| `call` | có | liệt kê |
+| `apply` | có | mảng |
+| `bind` | không, trả hàm mới | liệt kê, có thể một phần |
+
+<Callout type="tip">
+Dùng `bind` để truyền method làm callback mà vẫn giữ `this`, hoặc arrow function / class field. Arrow function bỏ qua `thisArg` của `call`/`apply`/`bind`.
+</Callout>
+
+<Callout type="followup">
+Có thể `bind` hai lần để đổi `this` không? Không: lần bind đầu quyết định `this`, lần sau chỉ thêm đối số.
+</Callout>

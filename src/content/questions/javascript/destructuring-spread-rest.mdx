@@ -1,0 +1,30 @@
+---
+title: "Destructuring, spread và rest operator khác nhau thế nào?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: junior
+tags: [es6, destructuring, spread]
+answer: "Destructuring bóc giá trị từ array/object vào biến (hỗ trợ default, đổi tên). Spread `...x` mở rộng iterable/object thành phần tử rời; rest `...x` ở vế nhận gom phần còn lại thành array/object. Spread chỉ copy nông (shallow)."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`const { a, b = 5, ...rest } = { a: 1, c: 3, d: 4 };
+console.log(a, b, rest);
+
+const [x, , y = 9, ...tail] = [1, 2, undefined, 4, 5];
+console.log(x, y, tail);
+
+function sum(...nums) { return nums.reduce((s, n) => s + n, 0); }
+console.log(sum(...[1, 2, 3]));
+
+const { a: renamed } = { a: 42 };
+console.log(renamed);`} />
+
+- **Rest** xuất hiện ở vế nhận (tham số hàm, destructuring) và phải đứng cuối.
+- **Spread** xuất hiện ở vế cung cấp (gọi hàm, literal mảng/object). Với object, key sau ghi đè key trước: `{...defaults, ...overrides}`.
+
+<Callout type="pitfall">
+Default chỉ có hiệu lực với `undefined`, không phải `null`. Destructuring `null`/`undefined` ném `TypeError`. Spread chỉ sao chép nông: object lồng nhau vẫn dùng chung tham chiếu.
+</Callout>

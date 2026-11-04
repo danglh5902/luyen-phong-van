@@ -1,0 +1,33 @@
+---
+title: "Upload file trong Node.js: multer, giới hạn và streaming lên storage"
+topic: nodejs
+roles: [backend, fullstack]
+level: mid
+tags: [upload, multer, stream, s3]
+answer: "multer parse multipart/form-data. Luôn đặt limits (fileSize, files), kiểm tra mimetype/magic bytes và không tin tên file client. Với file lớn dùng diskStorage hoặc stream thẳng lên S3 thay vì memoryStorage để tránh tốn RAM; tốt nhất dùng presigned URL cho client upload trực tiếp."
+---
+```js
+const multer = require('multer');
+const upload = multer({
+  storage: multer.diskStorage({ destination: '/tmp/uploads' }),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) =>
+    cb(null, ['image/png', 'image/jpeg'].includes(file.mimetype)),
+});
+app.post('/avatar', upload.single('file'), (req, res) => res.json({ size: req.file.size }));
+```
+
+| Chiến lược | Dùng khi |
+|---|---|
+| `memoryStorage` | File nhỏ, xử lý ngay (rủi ro OOM nếu nhiều request) |
+| `diskStorage` | File vừa, cần xử lý sau |
+| Stream tới S3 (busboy/multer-s3) | File lớn, không giữ trên server |
+| Presigned URL | Client upload thẳng, server chỉ ký URL |
+
+<Callout type="pitfall">
+`mimetype` do client khai báo nên có thể giả. Kiểm tra magic bytes, sinh tên file ngẫu nhiên (chống path traversal, ghi đè) và không lưu file upload trong thư mục được serve tĩnh nếu chưa kiểm soát.
+</Callout>
+
+<Callout type="followup">
+Cách chống zip bomb và quét virus file upload ra sao?
+</Callout>

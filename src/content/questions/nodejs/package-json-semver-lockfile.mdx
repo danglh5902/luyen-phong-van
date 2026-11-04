@@ -1,0 +1,33 @@
+---
+title: "package.json: dependencies, devDependencies, semver và lockfile"
+topic: nodejs
+roles: [backend, fullstack]
+level: junior
+tags: [npm, package-json, semver, lockfile]
+answer: "dependencies cần khi chạy production, devDependencies chỉ khi dev/build/test. Semver MAJOR.MINOR.PATCH: ^ cho phép nâng minor/patch, ~ chỉ patch. Lockfile ghi version chính xác đã cài để build lặp lại được; nên commit và dùng npm ci trên CI."
+---
+| Trường | Ý nghĩa |
+|---|---|
+| `dependencies` | Cần lúc runtime |
+| `devDependencies` | Test, lint, build, type |
+| `peerDependencies` | Yêu cầu host project cung cấp (plugin/library) |
+| `optionalDependencies` | Cài lỗi cũng không fail |
+
+Semver `MAJOR.MINOR.PATCH`:
+
+| Range | Chấp nhận |
+|---|---|
+| `^1.2.3` | `>=1.2.3 <2.0.0` |
+| `~1.2.3` | `>=1.2.3 <1.3.0` |
+| `1.2.3` | đúng phiên bản đó |
+| `^0.2.3` | `>=0.2.3 <0.3.0` (0.x coi minor như breaking) |
+
+Lockfile (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`) khoá cả cây dependency gồm transitive deps cùng hash toàn vẹn.
+
+<Callout type="tip">
+CI dùng `npm ci`: cài đúng theo lockfile, xoá `node_modules` trước, fail nếu lockfile lệch `package.json`. Ở image production dùng `npm ci --omit=dev`.
+</Callout>
+
+<Callout type="pitfall">
+Không commit lockfile thì mỗi lần cài có thể ra version khác nhau (do `^`), gây lỗi "chạy trên máy tôi".
+</Callout>

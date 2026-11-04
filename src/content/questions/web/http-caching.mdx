@@ -1,0 +1,35 @@
+---
+title: "HTTP caching: `Cache-Control`, `ETag` và validation hoạt động ra sao?"
+topic: web
+roles: [frontend, fullstack, backend]
+level: mid
+tags: [cache, cache-control, etag, performance]
+answer: "Cache-Control điều khiển việc cache: max-age (thời gian fresh), no-cache (phải revalidate), no-store (không lưu), public/private. Khi hết hạn, trình duyệt gửi If-None-Match với ETag; nếu không đổi server trả 304 Not Modified không kèm body."
+---
+```http
+# Asset có hash trong tên file: cache một năm
+Cache-Control: public, max-age=31536000, immutable
+
+# HTML: luôn kiểm tra lại
+Cache-Control: no-cache
+ETag: "v42"
+
+# Request tiếp theo
+If-None-Match: "v42"
+# Response: 304 Not Modified
+```
+
+| Directive | Ý nghĩa |
+|---|---|
+| `max-age=N` | Fresh trong N giây, không hỏi server |
+| `no-cache` | Được lưu nhưng phải revalidate mỗi lần |
+| `no-store` | Không lưu (dữ liệu nhạy cảm) |
+| `private` / `public` | Chỉ cache trình duyệt / cho phép cả CDN |
+| `stale-while-revalidate` | Dùng bản cũ ngay, cập nhật nền |
+
+- Chiến lược phổ biến: file tĩnh có hash (`app.3f9a.js`) cache dài; HTML `no-cache`; đổi nội dung thì đổi tên file (cache busting).
+- `Last-Modified`/`If-Modified-Since` là cách validate bằng thời gian, ETag chính xác hơn.
+
+<Callout type="pitfall">
+`no-cache` không có nghĩa là "không cache"; đó là `no-store`. Dùng nhầm sẽ hoặc lộ dữ liệu nhạy cảm hoặc mất lợi ích cache.
+</Callout>

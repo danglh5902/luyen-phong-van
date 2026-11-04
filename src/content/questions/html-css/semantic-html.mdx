@@ -1,0 +1,32 @@
+---
+title: "Semantic HTML là gì? Vì sao nên dùng thay cho `div` khắp nơi?"
+topic: html-css
+roles: [frontend, fullstack]
+level: junior
+tags: [html, semantic, accessibility, seo]
+answer: "Semantic HTML dùng thẻ có ý nghĩa (header, nav, main, article, button...) thay vì div/span chung chung. Nhờ đó screen reader, trình duyệt và search engine hiểu cấu trúc trang, đồng thời có sẵn hành vi (focus, keyboard) mà không cần code thêm."
+---
+```html
+<header><nav aria-label="Chính">...</nav></header>
+<main>
+  <article>
+    <h1>Tiêu đề</h1>
+    <img src="a.jpg" alt="Biểu đồ doanh thu quý 3" />
+  </article>
+</main>
+<footer>...</footer>
+```
+
+| Thay vì | Dùng |
+|---|---|
+| `div onclick` | `button` (có focus, Enter/Space miễn phí) |
+| `div` bọc menu | `nav` + `ul` |
+| input + text rời | `label for` gắn với input |
+
+<Callout type="tip">
+Mỗi trang chỉ nên có một `main` và một `h1`; không nhảy cấp heading (h1 rồi h4) chỉ để đổi kích thước, hãy dùng CSS.
+</Callout>
+
+<Callout type="pitfall">
+`alt` rỗng (`alt=""`) là đúng cho ảnh trang trí; bỏ hẳn thuộc tính `alt` thì screen reader có thể đọc tên file.
+</Callout>

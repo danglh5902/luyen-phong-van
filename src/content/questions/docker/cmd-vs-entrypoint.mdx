@@ -1,0 +1,28 @@
+---
+title: "CMD và ENTRYPOINT khác nhau thế nào?"
+topic: docker
+roles: [backend, fullstack, devops]
+level: junior
+tags: [dockerfile, cmd, entrypoint]
+answer: "ENTRYPOINT định nghĩa chương trình chính luôn chạy của container; CMD cung cấp tham số mặc định, dễ bị ghi đè bằng đối số của docker run. Dùng chung: ENTRYPOINT là lệnh cố định, CMD là đối số mặc định. Nên dùng dạng exec (mảng JSON)."
+---
+```dockerfile
+ENTRYPOINT ["python", "app.py"]
+CMD ["--port", "8000"]
+```
+
+```bash
+docker run img                  # python app.py --port 8000
+docker run img --port 9000      # python app.py --port 9000 (ghi đè CMD)
+docker run --entrypoint sh img  # ghi đè ENTRYPOINT
+```
+
+| | Shell form | Exec form |
+|---|---|---|
+| Cú pháp | `CMD python app.py` | `CMD ["python","app.py"]` |
+| PID 1 | `/bin/sh -c` | chính tiến trình app |
+| Nhận SIGTERM | không (shell không chuyển tiếp) | có |
+
+<Callout type="pitfall">
+Dạng shell khiến app không nhận được SIGTERM nên `docker stop` phải chờ 10 giây rồi SIGKILL. Hãy dùng exec form.
+</Callout>

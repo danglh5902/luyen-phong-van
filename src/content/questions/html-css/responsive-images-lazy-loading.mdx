@@ -1,0 +1,30 @@
+---
+title: "Ảnh responsive: `srcset`, `sizes`, `picture` và lazy loading đúng cách"
+topic: html-css
+roles: [frontend, fullstack]
+level: senior
+tags: [images, srcset, picture, lazy-loading, performance]
+answer: "srcset kèm sizes để trình duyệt chọn ảnh theo độ rộng hiển thị và DPR; picture cho art direction hoặc đổi định dạng (AVIF/WebP). loading=\"lazy\" trì hoãn ảnh ngoài màn hình, nhưng ảnh LCP phải tải sớm (không lazy, có thể fetchpriority=high) và luôn khai báo width/height để tránh CLS."
+---
+```html
+<picture>
+  <source type="image/avif" srcset="hero-800.avif 800w, hero-1600.avif 1600w" sizes="100vw" />
+  <img src="hero-800.jpg" width="800" height="450" alt="Cảnh núi"
+       srcset="hero-800.jpg 800w, hero-1600.jpg 1600w" sizes="100vw"
+       fetchpriority="high" decoding="async" />
+</picture>
+
+<img src="card.webp" width="320" height="180" alt="" loading="lazy" />
+```
+
+- `w` descriptor + `sizes` cho ảnh co giãn theo layout; `x` descriptor (`2x`) cho ảnh kích thước cố định.
+- Trình duyệt chọn dòng `source` đầu tiên khớp; phần tử `img` luôn bắt buộc làm fallback.
+- `width`/`height` cho phép tính tỉ lệ khung trước khi ảnh tải; kết hợp `aspect-ratio` và `max-width: 100%; height: auto` trong CSS.
+
+<Callout type="pitfall">
+Gắn `loading="lazy"` cho ảnh hero hay ảnh trong viewport đầu làm LCP chậm hơn. Chỉ lazy cho ảnh dưới màn hình đầu tiên.
+</Callout>
+
+<Callout type="followup">
+Với CDN ảnh có biến đổi theo URL, có thể sinh nhiều kích thước và định dạng tự động; cần ưu tiên AVIF/WebP với fallback JPEG.
+</Callout>

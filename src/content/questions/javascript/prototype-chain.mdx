@@ -1,0 +1,44 @@
+---
+title: "Prototype và prototype chain là gì? class khác function constructor ra sao?"
+topic: javascript
+roles: [frontend, backend, fullstack]
+level: mid
+tags: [prototype, class, inheritance, oop]
+answer: "Mỗi object có liên kết nội bộ [[Prototype]] tới object khác; khi truy cập property không có sẵn, engine đi ngược chuỗi này đến null. `class` chỉ là cú pháp trên prototype, nhưng không hoisting như function, bắt buộc dùng `new` và chạy strict mode."
+---
+import Runnable from "../../../components/Runnable";
+
+## Ví dụ
+
+<Runnable client:visible lang="js" code={`const base = { hello() { return "hi " + this.name; } };
+const obj = Object.create(base);
+obj.name = "An";
+console.log(obj.hello());
+console.log(Object.getPrototypeOf(obj) === base);
+console.log(obj.hasOwnProperty("hello"), "hello" in obj);
+
+class A { m() {} }
+console.log(typeof A, A.prototype.constructor === A);
+console.log(Object.getPrototypeOf(new A()) === A.prototype);`} />
+
+- `obj.__proto__` (hoặc `Object.getPrototypeOf`) là prototype của instance; `Fn.prototype` là object được gán làm prototype cho instance tạo bởi `new Fn()`.
+- Gán property luôn tạo own property trên object (shadowing), không sửa prototype.
+- Method đặt trên prototype được chia sẻ giữa mọi instance, tiết kiệm bộ nhớ.
+
+## class so với function constructor
+
+| | `class` | function constructor |
+|---|---|---|
+| Gọi không có `new` | `TypeError` | chạy, `this` sai |
+| Hoisting | TDZ như `let` | hoisted |
+| Method | non-enumerable | enumerable nếu gán trực tiếp |
+| Kế thừa | `extends`, `super` | thủ công qua `Object.create` |
+| Private field | `#x` thật | không có |
+
+<Callout type="pitfall">
+Dùng `for...in` duyệt cả property kế thừa từ prototype; hãy dùng `Object.keys` hoặc `hasOwn`. Đổi prototype bằng `Object.setPrototypeOf` sau khi tạo làm engine mất tối ưu hóa.
+</Callout>
+
+<Callout type="followup">
+`Object.create(null)` tạo ra object gì? Dùng khi nào? (Dictionary không có prototype, không dính key như `toString`.)
+</Callout>

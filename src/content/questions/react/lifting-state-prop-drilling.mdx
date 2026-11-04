@@ -1,0 +1,30 @@
+---
+title: "Lifting state up và prop drilling: khi nào nâng state, khi nào dùng composition hoặc Context?"
+topic: react
+roles: [frontend, fullstack]
+level: mid
+tags: [state, composition, context]
+answer: "Khi hai component anh em cần chung dữ liệu, nâng state lên ancestor gần nhất rồi truyền xuống bằng props. Nếu props phải qua nhiều tầng trung gian (prop drilling), thử composition (truyền JSX qua `children`/slot) trước, rồi mới dùng Context."
+---
+**Lifting state up**: đưa state lên component cha chung gần nhất, con nhận `value` + `onChange`.
+
+**Chống prop drilling theo thứ tự ưu tiên:**
+1. Composition: component trung gian nhận `children` hoặc element đã dựng sẵn, không cần biết data.
+2. Context cho dữ liệu "toàn cục" ít đổi (theme, user, locale).
+3. Store ngoài (Zustand, Redux) khi state phức tạp, chia sẻ rộng.
+
+```jsx
+// Drilling: Layout phải chuyển user chỉ để Avatar dùng
+<Layout user={user} />
+
+// Composition: dựng Avatar ở nơi có user, Layout chỉ là khung
+<Layout sidebar={<Avatar user={user} />} />
+```
+
+<Callout type="tip">
+Giữ state càng gần nơi dùng càng tốt (colocation); chỉ nâng khi có nhu cầu chia sẻ thật. State đặt quá cao gây re-render dư thừa.
+</Callout>
+
+<Callout type="pitfall">
+Dùng Context cho state đổi liên tục làm mọi consumer re-render; tách context hoặc dùng store có selector.
+</Callout>

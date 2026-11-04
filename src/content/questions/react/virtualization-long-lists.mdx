@@ -1,0 +1,35 @@
+---
+title: "Render danh sách hàng chục nghìn item: virtualization hoạt động thế nào?"
+topic: react
+roles: [frontend, fullstack]
+level: senior
+tags: [performance, virtualization, list]
+answer: "Virtualization (windowing) chỉ render các item nằm trong viewport cộng một vùng đệm (overscan), phần còn lại thay bằng khoảng trống có chiều cao tính sẵn. Dùng TanStack Virtual, react-window hoặc react-virtuoso; DOM nhỏ nên render và scroll mượt."
+---
+```tsx
+const parentRef = useRef<HTMLDivElement>(null);
+const v = useVirtualizer({
+  count: rows.length,
+  getScrollElement: () => parentRef.current,
+  estimateSize: () => 36,
+  overscan: 8,
+});
+
+<div ref={parentRef} style={{ height: 500, overflow: "auto" }}>
+  <div style={{ height: v.getTotalSize(), position: "relative" }}>
+    {v.getVirtualItems().map((it) => (
+      <div key={it.key} style={{ position: "absolute", top: 0, height: it.size,
+           transform: `translateY(${it.start}px)` }}>{rows[it.index].name}</div>
+    ))}
+  </div>
+</div>
+```
+
+- Chi phí tỉ lệ với số item nhìn thấy, không theo tổng số.
+- Item chiều cao động cần đo (`measureElement`); chiều cao cố định thì đơn giản và nhanh nhất.
+- Đánh đổi: Ctrl+F của trình duyệt không tìm được item ngoài viewport, cần quan tâm accessibility (`aria-rowcount`, `aria-setsize`) và focus.
+- Cách khác: phân trang, infinite scroll, `content-visibility: auto`.
+
+<Callout type="pitfall">
+Item ảo hóa phải được `memo` và giữ `key` ổn định; state cục bộ của item sẽ mất khi cuộn ra khỏi viewport, nên đưa state lên trên.
+</Callout>

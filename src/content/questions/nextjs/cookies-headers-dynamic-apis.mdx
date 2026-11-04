@@ -1,0 +1,32 @@
+---
+title: "cookies(), headers() và Dynamic APIs: tác động đến rendering và thay đổi ở Next 15?"
+topic: nextjs
+roles: [frontend, fullstack]
+level: mid
+tags: [cookies, headers, dynamic-rendering]
+answer: "`cookies()`, `headers()`, `draftMode()` và `searchParams` là dynamic API: dùng chúng khiến route render theo từng request (dynamic). Từ Next 15 chúng bất đồng bộ nên phải `await`. Chỉ đọc ở Server Component; ghi cookie chỉ ở Server Action hoặc Route Handler."
+---
+```tsx
+import { cookies, headers } from "next/headers";
+
+export default async function Page() {
+  const theme = (await cookies()).get("theme")?.value ?? "light"; // Next 14: đồng bộ
+  const ua = (await headers()).get("user-agent");
+  return <Shell theme={theme} ua={ua} />;
+}
+
+// Server Action: ghi cookie
+"use server";
+export async function setTheme(v: string) {
+  (await cookies()).set("theme", v, { httpOnly: true, secure: true, sameSite: "lax" });
+}
+```
+
+- Không thể set cookie trong lúc render Server Component, vì response đã bắt đầu stream.
+- Một lần dùng dynamic API làm cả route dynamic; để cô lập, đặt phần đó trong component riêng bọc `Suspense` (PPR).
+- `searchParams` trong `page` cũng là Promise ở Next 15 và làm trang dynamic.
+- Cookie phiên nên `httpOnly`, `secure`, `sameSite`.
+
+<Callout type="pitfall">
+Đọc `cookies()` trong layout khiến mọi route con dynamic, mất lợi ích static. Đọc ở nơi thật cần.
+</Callout>

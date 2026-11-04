@@ -1,0 +1,38 @@
+---
+title: "API versioning trong NestJS: URI, header và media type"
+topic: nestjs
+roles: [backend, fullstack]
+level: mid
+tags: [versioning, api, rest]
+answer: "app.enableVersioning chọn kiểu: URI (/v1/...), HEADER, MEDIA_TYPE hoặc CUSTOM. Khai báo version bằng @Controller({ version: '1' }) hoặc @Version('2') trên handler. Chỉ tăng major khi có breaking change, và cần chính sách deprecation cho phiên bản cũ."
+---
+```ts
+// main.ts
+app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+
+@Controller({ path: 'users', version: '1' })
+export class UsersV1Controller {
+  @Get() list() { return [{ name: 'A B' }]; }
+}
+
+@Controller({ path: 'users', version: '2' })
+export class UsersV2Controller {
+  @Get() list() { return [{ firstName: 'A', lastName: 'B' }]; }   // breaking
+  @Get('count') @Version(['2', '3']) count() {}
+}
+```
+
+| Kiểu | Ví dụ | Ghi chú |
+|---|---|---|
+| URI | `/v1/users` | Dễ thấy, dễ cache, phổ biến nhất |
+| HEADER | `X-API-Version: 2` | URL sạch, khó test bằng trình duyệt |
+| MEDIA_TYPE | `Accept: application/json;v=2` | Đúng tinh thần REST, phức tạp |
+| CUSTOM | hàm tự trích version | Linh hoạt |
+
+- `VERSION_NEUTRAL` cho route áp dụng mọi version.
+- Giảm trùng lặp: v2 tái dùng service, chỉ khác DTO/controller; không copy cả tầng nghiệp vụ.
+- Swagger: tạo một document riêng cho mỗi version.
+
+<Callout type="tip">
+Thêm field vào response là backward-compatible, không cần version mới. Đổi tên/xoá field hoặc đổi ngữ nghĩa mới là breaking.
+</Callout>
